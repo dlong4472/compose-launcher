@@ -1,38 +1,30 @@
 package com.lin.comlauncher.viewmodel
 
-import android.content.Context
-import android.content.pm.PackageManager
-import com.lin.comlauncher.entity.ApplicationInfo
-import android.content.pm.ResolveInfo
-
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Resources
-import android.content.res.Resources.Theme
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
-import android.graphics.Rect
-import android.graphics.RectF
-import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
-import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.lifecycle.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.lin.comlauncher.R
 import com.lin.comlauncher.entity.AppInfoBaseBean
 import com.lin.comlauncher.entity.AppOrignBean
+import com.lin.comlauncher.entity.ApplicationInfo
 import com.lin.comlauncher.util.DisplayUtils
 import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
-import com.lin.comlauncher.util.LogUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 
@@ -87,7 +79,7 @@ class HomeViewModel : ViewModel() {
             }
             //add fold
             orignList.add(
-                17, AppOrignBean(
+                orignList.size / 2, AppOrignBean(
                     name = "文件夹",
                     packageName = "app1",
                     appType = LauncherConfig.CELL_TYPE_FOLD,
@@ -98,7 +90,7 @@ class HomeViewModel : ViewModel() {
 
             //add setting
             orignList.add(
-                18, AppOrignBean(
+                orignList.size / 2 + 1, AppOrignBean(
                     name = "SetLauncher",
                     packageName = LauncherConfig.APP_TYPE_FUNCTION,
                     appType = LauncherConfig.CELL_TYPE_APP,
@@ -132,7 +124,7 @@ class HomeViewModel : ViewModel() {
                             name = rInfo.name
                             pageName = rInfo.packageName;
                             activityName = rInfo.activityName
-                            icon = getBitmapFromDrawable(rInfo.drawable!!)
+                            icon = rInfo.drawable?.let { getBitmapFromDrawable(it) }
                             this.width = cellWidth
                             this.height = LauncherConfig.HOME_CELL_HEIGHT
                             iconWidth = LauncherConfig.CELL_ICON_WIDTH
@@ -156,7 +148,8 @@ class HomeViewModel : ViewModel() {
                     ai.width = cellWidth;
                     ai.height = cellWidth;
                     ai.posY = dpHeight - cellWidth
-                    ai.posX = LauncherConfig.HOME_DEFAULT_PADDING_LEFT + mToolBarList.size % 4 * cellWidth
+                    ai.posX =
+                        LauncherConfig.HOME_DEFAULT_PADDING_LEFT + mToolBarList.size % 4 * cellWidth
                     ai.position = LauncherConfig.POSITION_TOOLBAR
                     ai.showText = false
                     ai.cellPos = mToolBarList.size;

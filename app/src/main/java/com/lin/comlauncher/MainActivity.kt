@@ -2,7 +2,6 @@ package com.lin.comlauncher
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.res.Resources
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -10,21 +9,34 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.*
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.*
-import coil.compose.rememberAsyncImagePainter
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.gyf.immersionbar.ImmersionBar
 import com.lin.comlauncher.common.PermissionManager
 import com.lin.comlauncher.ui.theme.ComposeLauncherTheme
@@ -51,7 +63,10 @@ class MainActivity : ComponentActivity() {
             ComposeLauncherTheme {
                 Surface(color = MaterialTheme.colors.background) {
 //                    SwipeableSample(homeViewModel)
-                    var height = DisplayUtils.getScreenHeightCanUse(this) + ImmersionBar.getStatusBarHeight(this)
+                    var height =
+                        DisplayUtils.getScreenHeightCanUse(this) + ImmersionBar.getStatusBarHeight(
+                            this
+                        )
                     LocalConfiguration.current.screenHeightDp = DisplayUtils.pxToDp(height)
                     LogUtils.e(
                         "height=${LocalConfiguration.current.screenWidthDp}  width=${
@@ -72,8 +87,10 @@ class MainActivity : ComponentActivity() {
     fun initView() {
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
-        var arrayPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            arrayOf(Manifest.permission.QUERY_ALL_PACKAGES, Manifest.permission.VIBRATE)
+        var arrayPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) arrayOf(
+            Manifest.permission.QUERY_ALL_PACKAGES,
+            Manifest.permission.VIBRATE
+        )
         else arrayOf(Manifest.permission.VIBRATE)
         permissionManager.checkPermission(this, arrayPermission) {
             var width = resources.displayMetrics.widthPixels
@@ -85,9 +102,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
+        requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -115,17 +130,16 @@ fun createView(homeViewModel: HomeViewModel, onClick: () -> Unit) {
     LogUtils.e("recreate ${versionLiveState.value} ")
 
     ComposeLauncherTheme {
-        Scaffold(
-            content = { padding ->
-                Image(
-                    painter = painterResource(id = R.drawable.wall_paper),
-                    contentDescription = "",
-                    modifier = Modifier
-                            .padding(padding)
-                            .fillMaxHeight()
-                            .fillMaxWidth(),
-                    contentScale = ContentScale.Crop
-                )
+        Scaffold(content = { padding ->
+            Image(
+                painter = painterResource(id = R.drawable.wall_paper),
+                contentDescription = "",
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxHeight()
+                    .fillMaxWidth(),
+                contentScale = ContentScale.Crop
+            )
 
 //                Image(
 //                    painter = rememberAsyncImagePainter( R.drawable.wall_paper),
@@ -135,21 +149,20 @@ fun createView(homeViewModel: HomeViewModel, onClick: () -> Unit) {
 //                            .fillMaxWidth(),
 //                    contentScale = ContentScale.Crop
 //                )
-                var version = versionLiveState.value
-                var time1 = System.currentTimeMillis()
-                var versionInt = remember {
-                    mutableStateOf(0)
-                }
-                var newVersion = version
-
-                LogUtils.e("init view ${newVersion}")
-                if (applist.homeList?.size ?: 0 == 0) {
-                    InitView(applist)
-                } else {
-                    DesktopView(lists = applist, viewModel = homeViewModel, version = versionInt)
-                }
+            var version = versionLiveState.value
+            var time1 = System.currentTimeMillis()
+            var versionInt = remember {
+                mutableStateOf(0)
             }
-        )
+            var newVersion = version
+
+            LogUtils.e("init view ${newVersion}")
+            if (applist.homeList?.size ?: 0 == 0) {
+                InitView(applist)
+            } else {
+                DesktopView(lists = applist)
+            }
+        })
 
     }
 }
@@ -165,16 +178,15 @@ fun TestView() {
 
             Column(
                 modifier = Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth()
-                        .offset(100.dp, 200.dp)
-                        .background(Color.White)
-                        .padding(20.dp),
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .offset(100.dp, 200.dp)
+                    .background(Color.White)
+                    .padding(20.dp),
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    "Button ${dragState.value}",
-                    color = Color.Black
+                    "Button ${dragState.value}", color = Color.Black
                 )
             }
             TestButtonView(dragState)
@@ -192,8 +204,8 @@ fun TestButtonView(dragState: MutableState<Dp>) {
             LogUtils.e("dp = $dragState")
         },
         Modifier
-                .offset(100.dp, 200.dp)
-                .size(100.dp, 100.dp)
+            .offset(100.dp, 200.dp)
+            .size(100.dp, 100.dp)
     ) {
         Text(text = "Click Me")
     }

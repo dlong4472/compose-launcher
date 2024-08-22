@@ -91,9 +91,9 @@ dependencies {
 
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
     // 基础依赖包，必须要依赖
-    implementation 'com.gyf.immersionbar:immersionbar:3.0.0'
+    implementation 'com.geyifeng.immersionbar:immersionbar:3.2.2'
 // kotlin扩展（可选）
-    implementation 'com.gyf.immersionbar:immersionbar-ktx:3.0.0'
+    implementation 'com.geyifeng.immersionbar:immersionbar-ktx:3.2.2'
 
     implementation("io.coil-kt:coil-compose:2.1.0")
 }

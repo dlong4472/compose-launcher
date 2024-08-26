@@ -1,5 +1,6 @@
 package com.lin.comlauncher.view
 
+import android.annotation.SuppressLint
 import android.view.MotionEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,43 +40,38 @@ import com.lin.comlauncher.entity.AppManagerBean
 import com.lin.comlauncher.entity.ApplicationInfo
 import com.lin.comlauncher.ui.theme.MyBasicColumn
 import com.lin.comlauncher.ui.theme.pagerLazyFlingBehavior
-import com.lin.comlauncher.util.DisplayUtils
 
-var lastTime = System.currentTimeMillis()
-
+@SuppressLint("MutableCollectionMutableState")
 @Preview
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppInfoBaseBean) {
-    var time1 = System.currentTimeMillis()
-    var width = LocalConfiguration.current.screenWidthDp
-    var height = LocalConfiguration.current.screenHeightDp
-    var widthPx = DisplayUtils.dpToPx(width);
+    val width = LocalConfiguration.current.screenWidthDp
+    val height = LocalConfiguration.current.screenHeightDp
     val state = rememberLazyListState()
-    var foldOpenState = remember { mutableStateOf<MutableList<ApplicationInfo>>(mutableListOf()) }
-//    var scrollWidth = remember { mutableStateOf(0) }
-    var context = LocalContext.current
+    val foldOpenState = remember { mutableStateOf<MutableList<ApplicationInfo>>(mutableListOf()) }
+    val context = LocalContext.current
 
     val coroutineScope = rememberCoroutineScope()
     val coroutineAnimScope = rememberCoroutineScope()
 
-    var dragInfoState = remember { mutableStateOf<ApplicationInfo?>(null) }
-    var dragUpState = remember {
+    val dragInfoState = remember { mutableStateOf<ApplicationInfo?>(null) }
+    val dragUpState = remember {
         mutableStateOf(false)
     }
 
-    var offsetX = remember { mutableStateOf(0.dp) }
-    var offsetY = remember { mutableStateOf(0.dp) }
-    var currentSelect = remember { mutableStateOf(0) }
-    var animFinish = remember { mutableStateOf(false) }
-    var appManagerState = remember { mutableStateOf<AppManagerBean?>(null) }
+    val offsetX = remember { mutableStateOf(0.dp) }
+    val offsetY = remember { mutableStateOf(0.dp) }
+    val currentSelect = remember { mutableIntStateOf(0) }
+    val animFinish = remember { mutableStateOf(false) }
+    val appManagerState = remember { mutableStateOf<AppManagerBean?>(null) }
 
-    var homeList = lists.homeList
-    var toolBarList = lists.toobarList
+    val homeList = lists.homeList
+    val toolBarList = lists.toobarList
 
     //draw dot
-    var dotWidth = 8;
-    var indicationDot = homeList.size * dotWidth + (homeList.size - 1) * 6
+    val dotWidth = 8
+    val indicationDot = homeList.size * dotWidth + (homeList.size - 1) * 6
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
@@ -84,24 +81,23 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
                 (width.dp - indicationDot.dp) / 2, (height - 150).dp
             )
     ) {
-        homeList.forEachIndexed { index, arrayList ->
+        homeList.forEachIndexed { index, _ ->
             Box(
                 modifier = Modifier
                     .size(dotWidth.dp)
                     .clip(CircleShape)
-                    .background(Color(if (currentSelect.value == index) 0xccffffff else 0x66ffffff))
+                    .background(Color(if (currentSelect.intValue == index) 0xccffffff else 0x66ffffff))
             )
         }
     }
 
 
     // draw toolbar
-    lists.toobarList.let { applist ->
-        var homelist = homeList.getOrNull(currentSelect.value) ?: ArrayList()
+    lists.toobarList.let { appList ->
         MyBasicColumn(
             modifier = Modifier.zIndex(zIndex = 0f)
         ) {
-            applist.forEachIndexed { index, it ->
+            appList.forEachIndexed { _, it ->
                 IconView(
                     it = it, dragUpState = dragUpState, foldOpen = foldOpenState
                 )
@@ -109,8 +105,6 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
         }
 //
     }
-
-    var pos = offsetX.value
 
     LazyRow(
 
@@ -127,7 +121,7 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
             .pointerInput(0) {
                 detectLongPress(
                     context = context,
-                    toolList = toolBarList!!,
+                    toolList = toolBarList,
                     homeList = homeList,
                     currentSel = currentSelect,
                     coroutineScope = coroutineScope,
@@ -142,14 +136,14 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
                     appManagerState = appManagerState
                 )
             }, state = state, flingBehavior = pagerLazyFlingBehavior(
-            state, (lists.homeList?.size ?: 0)
+            state, lists.homeList.size
         )
     ) {
-        currentSelect.value = state.firstVisibleItemIndex
-        lists.homeList?.let { homeList ->
+        currentSelect.intValue = state.firstVisibleItemIndex
+        lists.homeList.let { homeList ->
             if (homeList.size == 0) return@let
 
-            lists.homeList?.forEachIndexed { index, applist ->
+            lists.homeList.forEachIndexed { _, appList ->
                 item {
                     Column(
                         modifier = Modifier
@@ -158,8 +152,8 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
                             .offset(0.dp, 0.dp)
 
                     ) {
-                        MyBasicColumn() {
-                            applist.forEach {
+                        MyBasicColumn {
+                            appList.forEach {
                                 IconView(
                                     it = it, dragUpState = dragUpState, foldOpen = foldOpenState
                                 )
@@ -185,7 +179,7 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
                 .pointerInput(0) {
                     detectLongPress(
                         context = context,
-                        toolList = toolBarList!!,
+                        toolList = toolBarList,
                         homeList = homeList,
                         currentSel = currentSelect,
                         coroutineScope = coroutineScope,
@@ -226,34 +220,17 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
 
     //current drag app
     if (dragUpState.value) {
-        dragInfoState?.value?.let {
+        dragInfoState.value?.let {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .size(it.width.dp, it.height.dp)
                     .offset(it.posX.dp, it.posY.dp)
             ) {
-//                LogUtils.e("dragUp = ${dragUpState.value}")
                 IconViewDetail(it = it)
             }
         }
     }
-//    LogUtils.e("usetime=${System.currentTimeMillis()-time1}")
-//    var time = System.currentTimeMillis() - lastTime
-//    if (time > 0) {
-//        if (time > 30) {
-//            Text(
-//                text = "fps:30",
-//                Modifier.offset(20.dp, 30.dp)
-//            )
-//        } else {
-//            Text(
-//                text = "fps:${1000 / time}",
-//                Modifier.offset(20.dp, 30.dp)
-//            )
-//        }
-//        lastTime = System.currentTimeMillis();
-//    }
 }
 
 class DesktopViewPreviewProvider : PreviewParameterProvider<AppInfoBaseBean> {
@@ -261,17 +238,12 @@ class DesktopViewPreviewProvider : PreviewParameterProvider<AppInfoBaseBean> {
         AppInfoBaseBean(
             homeList = arrayListOf(
                 arrayListOf(
-                    ApplicationInfo(name = "App 1"),
-                    ApplicationInfo(name = "App 2")
-                ),
-                arrayListOf(
-                    ApplicationInfo(name = "App 3"),
-                    ApplicationInfo(name = "App 4")
+                    ApplicationInfo(name = "App 1"), ApplicationInfo(name = "App 2")
+                ), arrayListOf(
+                    ApplicationInfo(name = "App 3"), ApplicationInfo(name = "App 4")
                 )
-            ),
-            toobarList = arrayListOf(
-                ApplicationInfo(name = "App 5"),
-                ApplicationInfo(name = "App 6")
+            ), toobarList = arrayListOf(
+                ApplicationInfo(name = "App 5"), ApplicationInfo(name = "App 6")
             )
         )
     )

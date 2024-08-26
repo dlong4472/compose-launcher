@@ -1,5 +1,6 @@
 package com.lin.comlauncher.viewmodel
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
@@ -8,9 +9,6 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -23,51 +21,41 @@ import com.lin.comlauncher.util.DisplayUtils
 import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.launch
 
 
 class HomeViewModel : ViewModel() {
-    var infoBaseBean = AppInfoBaseBean();
+    var infoBaseBean = AppInfoBaseBean()
 
-    val channel = Channel<Int>(UNLIMITED)
+    private var currentVersion = 0
 
-    var currentVersion = 0;
+    private val loadInfoLiveData = MutableLiveData(currentVersion)
 
-    var loadInfoLiveData = MutableLiveData<Int>(currentVersion)
-
-    var appVersionLiveData: LiveData<Int> = loadInfoLiveData
+    val appVersionLiveData: LiveData<Int> = loadInfoLiveData
 
 
-    suspend fun sendData(value: Int) {
-        channel.send(value)
-    }
-
-    var uiState by mutableStateOf<String>("111")
-        private set
-
+    @SuppressLint("UseCompatLoadingForDrawables")
     fun loadApp(pm: PackageManager, width: Int, height: Int, resources: Resources) {
         viewModelScope.launch(Dispatchers.IO) {
-            var startTime = System.currentTimeMillis();
-            var dpWidth = DisplayUtils.pxToDp(width)
-            var dpHeight = DisplayUtils.pxToDp(height)
+            val startTime = System.currentTimeMillis()
+            val dpWidth = DisplayUtils.pxToDp(width)
+            val dpHeight = DisplayUtils.pxToDp(height)
             LauncherConfig.APP_INFO_DRAG_DIS = DisplayUtils.dpToPx(10)
             val intent = Intent(Intent.ACTION_MAIN, null)
             intent.addCategory(Intent.CATEGORY_LAUNCHER)
-            var appInfoBaseBean = AppInfoBaseBean()
+            val appInfoBaseBean = AppInfoBaseBean()
 
-            var mlist = ArrayList<ArrayList<ApplicationInfo>>();
+            val list = ArrayList<ArrayList<ApplicationInfo>>()
             var cacheList = ArrayList<ApplicationInfo>()
-            var mToolBarList = ArrayList<ApplicationInfo>()
+            val mToolBarList = ArrayList<ApplicationInfo>()
 
-            var findSet = HashSet<String>()
+            val findSet = HashSet<String>()
             var index = 0
-            var cellWidth = (dpWidth - LauncherConfig.HOME_DEFAULT_PADDING_LEFT * 2) / 4
-            var cellMax = LauncherConfig.HOME_PAGE_CELL_NUM
-            var orignList = mutableListOf<AppOrignBean>()
-            pm.queryIntentActivities(intent, 0)?.forEach {
-                orignList.add(
+            val cellWidth = (dpWidth - LauncherConfig.HOME_DEFAULT_PADDING_LEFT * 2) / 4
+            val cellMax = LauncherConfig.HOME_PAGE_CELL_NUM
+            val originList = mutableListOf<AppOrignBean>()
+            pm.queryIntentActivities(intent, 0).forEach {
+                originList.add(
                     AppOrignBean(
                         name = it.loadLabel(pm).toString(),
                         activityName = it.activityInfo.name,
@@ -78,8 +66,8 @@ class HomeViewModel : ViewModel() {
                 )
             }
             //add fold
-            orignList.add(
-                orignList.size / 2, AppOrignBean(
+            originList.add(
+                originList.size / 2, AppOrignBean(
                     name = "文件夹",
                     packageName = "app1",
                     appType = LauncherConfig.CELL_TYPE_FOLD,
@@ -89,8 +77,8 @@ class HomeViewModel : ViewModel() {
             )
 
             //add setting
-            orignList.add(
-                orignList.size / 2 + 1, AppOrignBean(
+            originList.add(
+                originList.size / 2 + 1, AppOrignBean(
                     name = "SetLauncher",
                     packageName = LauncherConfig.APP_TYPE_FUNCTION,
                     appType = LauncherConfig.CELL_TYPE_APP,
@@ -100,16 +88,13 @@ class HomeViewModel : ViewModel() {
             )
 
 
-            orignList.forEach continuing@{ resolveInfo ->
+            originList.forEach continuing@{ resolveInfo ->
                 if (findSet.contains(resolveInfo.packageName))
                     return@continuing
-//                if(mlist.size>1){
-//                    return@continuing
-//                }
                 if (index == 10)
                     findSet.add(resolveInfo.packageName ?: "")
-                index %= cellMax;
-                var ai = ApplicationInfo(
+                index %= cellMax
+                val ai = ApplicationInfo(
                     name = resolveInfo.name,
                     resolveInfo.packageName
                 )
@@ -119,10 +104,10 @@ class HomeViewModel : ViewModel() {
                 } else if (resolveInfo.appType == LauncherConfig.CELL_TYPE_FOLD) {
                     //add test fold app
                     for (i in 0 until 7) {
-                        var child = ApplicationInfo().apply {
-                            var rInfo = orignList.get(i)
+                        val child = ApplicationInfo().apply {
+                            val rInfo = originList[i]
                             name = rInfo.name
-                            pageName = rInfo.packageName;
+                            pageName = rInfo.packageName
                             activityName = rInfo.activityName
                             icon = rInfo.drawable?.let { getBitmapFromDrawable(it) }
                             this.width = cellWidth
@@ -141,21 +126,21 @@ class HomeViewModel : ViewModel() {
                 ai.activityName = resolveInfo.activityName
                 ai.pageName = resolveInfo.packageName
 
-                LauncherConfig.HOME_TOOLBAR_START = dpHeight - dpWidth / 4;
-                ai.iconWidth = LauncherConfig.CELL_ICON_WIDTH;
-                ai.iconHeight = LauncherConfig.CELL_ICON_WIDTH;
+                LauncherConfig.HOME_TOOLBAR_START = dpHeight - dpWidth / 4
+                ai.iconWidth = LauncherConfig.CELL_ICON_WIDTH
+                ai.iconHeight = LauncherConfig.CELL_ICON_WIDTH
                 if (LauncherUtils.isToolBarApplication(ai.pageName) && mToolBarList.size < 4) {
-                    ai.width = cellWidth;
-                    ai.height = cellWidth;
+                    ai.width = cellWidth
+                    ai.height = cellWidth
                     ai.posY = dpHeight - cellWidth
                     ai.posX =
                         LauncherConfig.HOME_DEFAULT_PADDING_LEFT + mToolBarList.size % 4 * cellWidth
                     ai.position = LauncherConfig.POSITION_TOOLBAR
                     ai.showText = false
-                    ai.cellPos = mToolBarList.size;
+                    ai.cellPos = mToolBarList.size
                     mToolBarList.add(ai)
                 } else {
-                    ai.width = cellWidth;
+                    ai.width = cellWidth
                     ai.height = LauncherConfig.HOME_CELL_HEIGHT
                     ai.posX = LauncherConfig.HOME_DEFAULT_PADDING_LEFT + (index % 4) * cellWidth
                     ai.posY =
@@ -166,11 +151,11 @@ class HomeViewModel : ViewModel() {
                         cacheList = ArrayList()
                     }
                     if (index == 0) {
-                        mlist.add(cacheList)
+                        list.add(cacheList)
                     }
                     ai.cellPos = index
-                    ai.pagePos = mlist.size - 1
-                    index++;
+                    ai.pagePos = list.size - 1
+                    index++
                 }
                 ai.orignX = ai.posX
                 ai.orignY = ai.posY
@@ -178,30 +163,29 @@ class HomeViewModel : ViewModel() {
             }
 
             appInfoBaseBean.homeList.clear()
-            appInfoBaseBean.homeList.addAll(mlist)
+            appInfoBaseBean.homeList.addAll(list)
             appInfoBaseBean.toobarList = mToolBarList
-            var userTime = System.currentTimeMillis() - startTime;
-            Log.e("linlog", "loadA==${mlist.size} toolbar=${mToolBarList.size} time=$userTime")
-            infoBaseBean = appInfoBaseBean;
+            val userTime = System.currentTimeMillis() - startTime
+            Log.e("linlog", "loadA==${list.size} toolbar=${mToolBarList.size} time=$userTime")
+            infoBaseBean = appInfoBaseBean
             loadInfoLiveData.postValue(++currentVersion)
         }
     }
 
-    fun getBitmapFromDrawable(drawable: Drawable): Bitmap? {
-        var image = drawable!!
-        if (image is BitmapDrawable)
-            return image?.bitmap
+    private fun getBitmapFromDrawable(drawable: Drawable): Bitmap? {
+        if (drawable is BitmapDrawable)
+            return drawable.bitmap
         else {
-            var iWidth = image.intrinsicWidth
-            var iHeight = image.intrinsicHeight
+            var iWidth = drawable.intrinsicWidth
+            val iHeight = drawable.intrinsicHeight
             if (iWidth < 0)
                 iWidth = 1
             if (iHeight < 0)
                 iHeight < 1
-            var bmp = Bitmap.createBitmap(iWidth, iHeight, Bitmap.Config.ARGB_8888)
-            var canvas = Canvas(bmp)
-            image.setBounds(0, 0, canvas.width, canvas.height)
-            image.draw(canvas)
+            val bmp = Bitmap.createBitmap(iWidth, iHeight, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
             return bmp
         }
     }

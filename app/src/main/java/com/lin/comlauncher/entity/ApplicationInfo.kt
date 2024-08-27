@@ -33,11 +33,23 @@ class ApplicationInfo(
     var imageBitmap: AsyncImagePainter? = null,
     var pagePos: Int = 0,
     var appType: Int = 0,
-    var childs: ArrayList<ApplicationInfo> = ArrayList()
+    var childs: ArrayList<ApplicationInfo> = ArrayList(),
+    var sizeType: String = "2*1",
 ) {
     override fun toString(): String {
         return "${name}: position=${position}"
     }
+
+    fun updateSize() {
+        val sizes = sizeType.split("*").map { it.toInt() }
+        if (sizes.size == 2) {
+            width *= sizes[0]
+            height *= sizes[1]
+            iconWidth *= sizes[0]
+            iconHeight *= sizes[1]
+        }
+    }
+
 }
 
 class AppInfoBaseBean(

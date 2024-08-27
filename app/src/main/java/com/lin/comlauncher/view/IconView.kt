@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -97,7 +98,8 @@ fun IconViewDetail(it: ApplicationInfo, showText: Boolean = true) {
                 contentDescription = it.pageName,
                 modifier = Modifier
                         .size(it.iconWidth.dp, it.iconHeight.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
             )
         }
     } else if (it.appType == LauncherConfig.CELL_TYPE_FOLD) {

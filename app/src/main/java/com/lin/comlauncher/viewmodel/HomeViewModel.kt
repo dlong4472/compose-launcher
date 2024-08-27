@@ -146,6 +146,7 @@ class HomeViewModel : ViewModel() {
                     ai.posY =
                         index / 4 * LauncherConfig.HOME_CELL_HEIGHT + LauncherConfig.DEFAULT_TOP_PADDING
                     ai.position = LauncherConfig.POSITION_HOME
+                    ai.updateSize()
                     cacheList.add(ai)
                     if (index == cellMax - 1) {
                         cacheList = ArrayList()

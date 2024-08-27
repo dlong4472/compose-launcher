@@ -32,7 +32,10 @@ import com.lin.comlauncher.util.LauncherUtils
 import com.lin.comlauncher.util.LogUtils
 import com.lin.comlauncher.util.PermissionsUtil
 import com.lin.comlauncher.view.DesktopView
+import com.lin.comlauncher.view.GridItemData
 import com.lin.comlauncher.view.InitView
+import com.lin.comlauncher.view.PaddingExampleDynamic
+import com.lin.comlauncher.view.getItemData
 import com.lin.comlauncher.viewmodel.HomeViewModel
 
 class MainActivity : ComponentActivity() {
@@ -143,7 +146,8 @@ fun CreateView(homeViewModel: HomeViewModel) {
             if (appList.homeList.size == 0) {
                 InitView()
             } else {
-                DesktopView(lists = appList)
+//                DesktopView(lists = appList)
+                PaddingExampleDynamic(getItemData())
             }
         })
 

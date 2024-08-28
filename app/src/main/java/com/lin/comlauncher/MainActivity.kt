@@ -31,10 +31,8 @@ import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
 import com.lin.comlauncher.util.LogUtils
 import com.lin.comlauncher.util.PermissionsUtil
-import com.lin.comlauncher.view.DesktopView
-import com.lin.comlauncher.view.GridItemData
 import com.lin.comlauncher.view.InitView
-import com.lin.comlauncher.view.PaddingExampleDynamic
+import com.lin.comlauncher.view.GridCardListView
 import com.lin.comlauncher.view.getItemData
 import com.lin.comlauncher.viewmodel.HomeViewModel
 
@@ -147,7 +145,7 @@ fun CreateView(homeViewModel: HomeViewModel) {
                 InitView()
             } else {
 //                DesktopView(lists = appList)
-                PaddingExampleDynamic(getItemData())
+                GridCardListView(getItemData())
             }
         })
 

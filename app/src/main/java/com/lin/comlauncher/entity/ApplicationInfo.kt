@@ -34,7 +34,7 @@ class ApplicationInfo(
     var pagePos: Int = 0,
     var appType: Int = 0,
     var childs: ArrayList<ApplicationInfo> = ArrayList(),
-    var sizeType: String = "2*1",
+    var sizeType: String = "1",
 ) {
     override fun toString(): String {
         return "${name}: position=${position}"

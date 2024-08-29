@@ -9,6 +9,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -20,12 +21,15 @@ import com.lin.comlauncher.entity.ApplicationInfo
 import com.lin.comlauncher.util.DisplayUtils
 import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
+import com.lin.comlauncher.view.GridItemData
+import com.lin.comlauncher.view.reSortItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
 class HomeViewModel : ViewModel() {
     var infoBaseBean = AppInfoBaseBean()
+    var carList = mutableListOf<List<GridItemData>>()
 
     private var currentVersion = 0
 
@@ -191,5 +195,13 @@ class HomeViewModel : ViewModel() {
         }
     }
 
+    fun loadCardList(screenHeightDp: Int, items: MutableList<GridItemData>) {
+        val viewHeight = screenHeightDp
+        val betweenPadding = 10
+        val topBottomPadding = 20 * 2
+        val cellSize = (viewHeight - topBottomPadding - betweenPadding * 3) / 4
+        carList = reSortItems(viewHeight, betweenPadding, topBottomPadding, cellSize, items)
+        loadInfoLiveData.postValue(++currentVersion)
+    }
 
 }

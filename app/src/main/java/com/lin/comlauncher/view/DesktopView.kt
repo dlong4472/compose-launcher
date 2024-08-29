@@ -1,5 +1,6 @@
 package com.lin.comlauncher.view
 
+import android.util.Log
 import android.view.MotionEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -226,7 +227,12 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
 
     //current drag app
     if (dragUpState.value) {
-        dragInfoState?.value?.let {
+        dragInfoState.value?.let {
+            Log.d(
+                "DesktopView",
+                "DesktopView----dragInfoState.value：" +
+                        "posX:${it.posX}, posY:${it.posY}, posFx:${it.posFx}, posFy:${it.posFy}"
+            )
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier

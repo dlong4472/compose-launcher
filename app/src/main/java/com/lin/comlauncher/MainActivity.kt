@@ -31,6 +31,7 @@ import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
 import com.lin.comlauncher.util.LogUtils
 import com.lin.comlauncher.util.PermissionsUtil
+import com.lin.comlauncher.view.DesktopView
 import com.lin.comlauncher.view.InitView
 import com.lin.comlauncher.view.GridCardListView
 import com.lin.comlauncher.view.getItemData
@@ -89,6 +90,7 @@ class MainActivity : ComponentActivity() {
         val width = resources.displayMetrics.widthPixels
         val height = LauncherUtils.getScreenHeight3(this)
         homeViewModel.loadApp(packageManager, width = width, height = height, resources)
+        homeViewModel.loadCardList(screenHeightDp = height, getItemData())
     }
 
     private val requestPermissionLauncher =
@@ -123,6 +125,7 @@ fun CreateView(homeViewModel: HomeViewModel) {
     LauncherConfig.HOME_HEIGHT = height
     val versionLiveState = homeViewModel.appVersionLiveData.observeAsState()
     val appList = homeViewModel.infoBaseBean
+    val cardList = homeViewModel.carList
 
     LogUtils.e("recreate ${versionLiveState.value} ")
 
@@ -145,7 +148,7 @@ fun CreateView(homeViewModel: HomeViewModel) {
                 InitView()
             } else {
 //                DesktopView(lists = appList)
-                GridCardListView(getItemData())
+                GridCardListView(cardList)
             }
         })
 

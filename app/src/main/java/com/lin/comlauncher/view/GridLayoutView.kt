@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,9 +13,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -26,15 +31,24 @@ import androidx.compose.ui.unit.sp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import com.lin.comlauncher.util.SortUtils.getItemHeight
 
-private const val LogDebug = true
-private const val LogDebug_GridCardListView = true
+const val LogDebug = true
+const val LogDebug_GridCardListView = true
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalPagerApi::class)
 @Preview(widthDp = 1280, heightDp = 720)
 @Composable
-fun GridCardListView(@PreviewParameter(GridItemDataProvider::class) items: MutableList<GridItemData>) {
+fun GridCardListView(@PreviewParameter(GridItemDataProvider::class) columns: MutableList<List<GridItemData>>) {
+    var dragInfoState = remember { mutableStateOf<GridItemData?>(null) }
+    var dragUpState = remember {
+        mutableStateOf(false)
+    }
+    var offsetX = remember { mutableStateOf(0.dp) }
+    var offsetY = remember { mutableStateOf(0.dp) }
+    var currentSelect = remember { mutableStateOf(0) }
+
     val viewHeight = LocalConfiguration.current.screenHeightDp
     val betweenPadding = 10
     val topBottomPadding = 20 * 2
@@ -44,30 +58,79 @@ fun GridCardListView(@PreviewParameter(GridItemDataProvider::class) items: Mutab
         "GridCardListView----viewHeight:$viewHeight, cellSize:$cellSize"
     )
 
-    val columns = reSortItems(viewHeight, betweenPadding, topBottomPadding, cellSize, items)
+//    val columns = reSortItems(viewHeight, betweenPadding, topBottomPadding, cellSize, items)
 
-    BoxWithConstraints(
-        modifier = Modifier
+    val groupedColumns = columns.chunked(3)
+    val pagerSize = groupedColumns.size
+    val cellCommonWidth = cellSize * 2 + betweenPadding
+    val pagerState = rememberPagerState(initialPage = 0)
+    if (LogDebug && LogDebug_GridCardListView) Log.d(
+        "GridLayoutView",
+        "GridCardListView----columns:${columns.size}, pagerSize:$pagerSize" +
+                "cellCommonWidth:$cellCommonWidth, pagerState:${pagerState.pageCount}"
+    )
+    HorizontalPager(
+        count = pagerSize, state = pagerState, modifier = Modifier
             .fillMaxSize()
             .background(Color.Gray)
-    ) {
-        val groupedColumns = columns.chunked(3)
-        val pagerSize = groupedColumns.size
-        val cellCommonWidth = cellSize * 2 + betweenPadding
-        val pagerState = rememberPagerState(initialPage = 0)
+            .pointerInput(0) {
+                detectLongPress(
+                    cardList = groupedColumns,
+                    currentSel = currentSelect,
+                    dragUpState = dragUpState,
+                    dragInfoState = dragInfoState,
+                    offsetX = offsetX,
+                    offsetY = offsetY
+                )
+            }
+    ) { page ->
         if (LogDebug && LogDebug_GridCardListView) Log.d(
             "GridLayoutView",
-            "GridCardListView----BoxWithConstraints----columns:${columns.size}, pagerSize:$pagerSize" +
-                    "cellCommonWidth:$cellCommonWidth, pagerState:${pagerState.pageCount}"
+            "GridCardListView----HorizontalPager----page,currentPage:${pagerState.currentPage}"
         )
-        HorizontalPager(count = pagerSize, state = pagerState) { page ->
-            GridList(
-                groupedColumns[page],
-                betweenPadding,
-                cellCommonWidth,
-                cellSize
+        currentSelect.value = pagerState.currentPage
+        GridList(
+            groupedColumns[page],
+            betweenPadding,
+            cellCommonWidth,
+            cellSize
+        )
+    }
+
+    if (dragUpState.value) {
+        if (LogDebug && LogDebug_GridCardListView) Log.d(
+            "GridLayoutView",
+            "GridCardListView----dragUpState.value：${dragUpState.value}"
+        )
+        dragInfoState.value?.let {
+            if (LogDebug && LogDebug_GridCardListView) Log.d(
+                "GridLayoutView",
+                "GridCardListView----dragInfoState.value：${it.id}, " +
+                        "posX:${it.posX}, posY:${it.posY}, posFx:${it.posFx}, posFy:${it.posFy}"
             )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .offset(it.posX.dp, it.posY.dp)
+            ) {
+                CardView(
+                    betweenPadding,
+                    cellCommonWidth,
+                    cellSize,
+                    it,
+                    initPos = false,
+                    isAlpha = false
+                )
+            }
+
         }
+    }
+
+    if(offsetX.value != 0.dp || offsetY.value != 0.dp){
+        if (LogDebug && LogDebug_GridCardListView) Log.d(
+            "GridLayoutView",
+            "GridCardListView----offsetX:${offsetX.value}, offsetY:${offsetY.value}"
+        )
     }
 }
 
@@ -104,22 +167,7 @@ fun GridList(
                             .size(10.dp)
                     )
                     columnItems.forEach { item ->
-                        val padding = if (item.height > 1) betweenPadding * (item.height - 1) else 0
-                        Box(
-                            modifier = Modifier
-                                .size(
-                                    width = cellCommonWidth.dp,
-                                    height = (cellHeight * item.height + padding).dp
-                                )
-                                .background(Color.Yellow),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = item.id.toString(),
-                                color = Color.Black,
-                                style = androidx.compose.ui.text.TextStyle(fontSize = 50.sp)
-                            )
-                        }
+                        CardView(betweenPadding, cellCommonWidth, cellHeight, item)
                         Box(
                             modifier = Modifier
                                 .size(10.dp)
@@ -143,15 +191,67 @@ fun GridList(
     }
 }
 
+private const val LogDebug_GridCardListView_LongPress = true
 
-private const val LogDebug_reSortItems = true
+@Composable
+fun CardView(
+    betweenPadding: Int,
+    cellCommonWidth: Int,
+    cellHeight: Int,
+    i: GridItemData,
+    isAlpha: Boolean = true,
+    initPos: Boolean = true,
+) {
+    val padding = if (i.height > 1) betweenPadding * (i.height - 1) else 0
+    Box(
+        modifier = Modifier
+            .size(
+                width = cellCommonWidth.dp,
+                height = (cellHeight * i.height + padding).dp
+            )
+            .alpha(if (isAlpha) (if (i.isDrag) 0f else 1f) else 1f)
+            .background(Color.Yellow)
+            .onGloballyPositioned { layoutCoordinates ->
+                if (!initPos) return@onGloballyPositioned
+                val position = layoutCoordinates.positionInRoot()
+                if (LogDebug && LogDebug_GridCardListView_LongPress) Log.d(
+                    "GridLayoutView",
+                    "CardView----onGloballyPositioned----id:${i.id}, " +
+                            "x:${position.x}, y:${position.y}"
+                )
+                // 初始化位置
+                if (i.posX == 0 && i.posY == 0 && position.x.toInt() > 0 && position.y.toInt() > 0) {
+                    i.posX = position.x.toInt()
+                    i.posY = position.y.toInt()
+                    if (LogDebug && LogDebug_GridCardListView_LongPress) Log.d(
+                        "GridLayoutView",
+                        "CardView----onGloballyPositioned----初始化位置----id:${i.id}, " +
+                                "posX:${i.posX}, posY:${i.posY}"
+                    )
+                    i.cellSize = cellHeight
+                    i.cellCommonWidth = cellCommonWidth
+                    i.betweenPadding = betweenPadding
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = i.id.toString(),
+            color = Color.Black,
+            style = androidx.compose.ui.text.TextStyle(fontSize = 50.sp)
+        )
+    }
+}
+
+
+private const val LogDebug_reSortItems = false
 
 /**
  * 重新排序卡片列表
  */
 @Synchronized
 @Suppress("SameParameterValue")
-private fun reSortItems(
+fun reSortItems(
     viewHeight: Int,
     betweenPadding: Int,
     topBottomPadding: Int,
@@ -192,7 +292,7 @@ private fun reSortItems(
                 // 找出下一个可以放入当前列的项，直到超出当前列的高度或者没有找到
                 val startIndexChecker = 1
                 val startIndexFind = items.subList(startIndexChecker, items.size).indexOfFirst {
-                   it.id == item.id
+                    it.id == item.id
                 }
                 val startIndex = startIndexFind + startIndexChecker
                 if (LogDebug && LogDebug_reSortItems) Log.d(
@@ -260,12 +360,19 @@ private fun reSortItems(
     return columns
 }
 
-private fun getItemHeight(item: GridItemData, cellSize: Int, betweenPadding: Int): Int {
-    val padding = if (item.height > 1) betweenPadding * (item.height - 1) else 0
-    return cellSize * item.height + padding
-}
 
-data class GridItemData(val id: Int, val height: Int)
+data class GridItemData(
+    val id: Int,
+    val height: Int,
+    var isDrag: Boolean = false,
+    var posX: Int = 0,
+    var posY: Int = 0,
+    var posFx: Float = 0f,
+    var posFy: Float = 0f,
+    var betweenPadding: Int = 0,
+    var cellCommonWidth: Int = 0,
+    var cellSize: Int = 0
+)
 
 class GridItemDataProvider : PreviewParameterProvider<MutableList<GridItemData>> {
     override val values: Sequence<MutableList<GridItemData>>

@@ -1,6 +1,9 @@
 package com.lin.comlauncher.util
 
+import android.util.Log
+import com.lin.comlauncher.BuildConfig
 import com.lin.comlauncher.entity.ApplicationInfo
+import com.lin.comlauncher.view.GridItemData
 
 object SortUtils {
     fun calculLeftPos(
@@ -234,7 +237,8 @@ object SortUtils {
             return -pos - 100
         }
 
-        val cellX = (posX - LauncherConfig.HOME_DEFAULT_PADDING_LEFT) / (LauncherConfig.HOME_CELL_WIDTH)
+        val cellX =
+            (posX - LauncherConfig.HOME_DEFAULT_PADDING_LEFT) / (LauncherConfig.HOME_CELL_WIDTH)
 
 
         val cellY = (posY - LauncherConfig.DEFAULT_TOP_PADDING) / LauncherConfig.HOME_CELL_HEIGHT
@@ -247,12 +251,56 @@ object SortUtils {
     fun findCurrentActorPix(list: List<ApplicationInfo>, pixX: Int, pixY: Int): ApplicationInfo? {
         val posX = DisplayUtils.pxToDp(pixX)
         val posY = DisplayUtils.pxToDp(pixY)
+        /**
+         * (posX，posY) ----------
+         *             |          |
+         *             |          |
+         *             |          |
+         *             ------------ (posX + width, posY + height)
+         */
         list.forEach {
             if (posX >= it.posX && posX < it.posX + it.width && posY >= it.posY && posY < it.posY + it.height) {
                 return it
             }
         }
         return null
+    }
+
+    fun findCurrentActorPix(list: List<List<GridItemData>>, pixX: Int, pixY: Int): GridItemData? {
+        val posX = DisplayUtils.pxToDp(pixX)
+        val posY = DisplayUtils.pxToDp(pixY)
+
+        /**
+         * (posX，posY) ----------
+         *             |          |
+         *             |          |
+         *             |          |
+         *             ------------ (posX + width, posY + height)
+         */
+        var g: GridItemData? = null
+        run {
+            list.forEach { l ->
+                l.forEach {
+                    val itemHeight = getItemHeight(it, it.cellSize, it.betweenPadding)
+                    if (BuildConfig.DEBUG) Log.d(
+                        "findCurrentActorPix",
+                        "list:${list.size} pixX=$pixX pixY=$pixY posX=$posX posY=$posY it=${it.posX} " +
+                                ",${it.posY} width=${it.cellCommonWidth} height=$itemHeight"
+                    )
+                    if (pixX >= it.posX && pixX < it.posX + it.cellCommonWidth && pixY >= it.posY && pixY < it.posY + itemHeight
+                    ) {
+                        g = it
+                        return@run
+                    }
+                }
+            }
+        }
+        return g
+    }
+
+    fun getItemHeight(item: GridItemData, cellSize: Int, betweenPadding: Int): Int {
+        val padding = if (item.height > 1) betweenPadding * (item.height - 1) else 0
+        return cellSize * item.height + padding
     }
 
     fun findCurrentActorDp(list: List<ApplicationInfo>, dpX: Int, dpY: Int): ApplicationInfo? {
@@ -266,7 +314,11 @@ object SortUtils {
         return null
     }
 
-    fun findCurrentActorFolder(list: List<ApplicationInfo>, pixX: Int, pixY: Int): ApplicationInfo? {
+    fun findCurrentActorFolder(
+        list: List<ApplicationInfo>,
+        pixX: Int,
+        pixY: Int
+    ): ApplicationInfo? {
         val posX = DisplayUtils.pxToDp(pixX)
         val posY = DisplayUtils.pxToDp(pixY)
         list.forEach {
@@ -277,7 +329,11 @@ object SortUtils {
         return null
     }
 
-    fun findCurrentActorCell(list: List<ApplicationInfo>, cellX: Int, cellY: Int): ApplicationInfo? {
+    fun findCurrentActorCell(
+        list: List<ApplicationInfo>,
+        cellX: Int,
+        cellY: Int
+    ): ApplicationInfo? {
         list.forEach {
             if (cellX + cellY * 4 == it.cellPos) {
                 return it
@@ -323,7 +379,11 @@ object SortUtils {
         return arrayOf(posX, posY)
     }
 
-    fun swapChange(applist: ArrayList<ApplicationInfo>, toolList: ArrayList<ApplicationInfo>, app: ApplicationInfo) {
+    fun swapChange(
+        applist: ArrayList<ApplicationInfo>,
+        toolList: ArrayList<ApplicationInfo>,
+        app: ApplicationInfo
+    ) {
         val app1 = app
         val app2 = app.dragInfo
         if (app1 != null && app2 != null) {

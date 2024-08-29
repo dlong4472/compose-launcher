@@ -1,6 +1,7 @@
 package com.lin.comlauncher.view
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.MutableState
@@ -412,12 +413,89 @@ suspend fun PointerInputScope.detectLongPress(
             // 更新偏移量（offsetX 和 offsetY）。偏移量是指应用的当前位置与其原始位置的差值。
             offsetX.value = dragAmount.x.toDp() + offsetX.value
             offsetY.value = dragAmount.y.toDp() + offsetY.value
-            // 检查应用是否被拖动了一定的距离（APP_INFO_DRAG_DIS）。如果是，那么就清除应用管理器的状态（appManagerState）。
-            if (abs(it.posX - it.orignX) > LauncherConfig.APP_INFO_DRAG_DIS || abs(it.posY - it.orignY) > LauncherConfig.APP_INFO_DRAG_DIS) {
-                // 拖动了足够的距离，所以不再需要应用管理器的状态。
-                appManagerState.value = null
-            }
+//            // 检查应用是否被拖动了一定的距离（APP_INFO_DRAG_DIS）。如果是，那么就清除应用管理器的状态（appManagerState）。
+//            if (abs(it.posX - it.orignX) > LauncherConfig.APP_INFO_DRAG_DIS || abs(it.posY - it.orignY) > LauncherConfig.APP_INFO_DRAG_DIS) {
+//                // 拖动了足够的距离，所以不再需要应用管理器的状态。
+//                appManagerState.value = null
+//            }
         }
 
+    }
+}
+
+const val LogDebug_PointerInputScope = true
+
+suspend fun PointerInputScope.detectLongPress(
+    cardList: List<List<List<GridItemData>>>,
+    currentSel: MutableState<Int>,
+    dragInfoState: MutableState<GridItemData?>,
+    dragUpState: MutableState<Boolean>,
+    offsetX: MutableState<Dp>, offsetY: MutableState<Dp>,
+) {
+    detectDragGesturesAfterLongPress(
+        onDragStart = { off ->
+            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+                "DragManager",
+                "PointerInputScope----onDragStart"
+            )
+            val cardList = cardList[currentSel.value]
+            val dragCard: GridItemData =
+                SortUtils.findCurrentActorPix(cardList, off.x.toInt(), off.y.toInt())
+                    ?: return@detectDragGesturesAfterLongPress
+            dragCard.also { card -> // 如果找到了被拖动的应用，那么就执行大括号中的代码。
+                card.posFx = card.posX.dp.toPx()
+                card.posFy = card.posY.dp.toPx()
+            }
+            dragCard.isDrag = true
+            dragInfoState.value = dragCard
+            dragUpState.value = true
+        },
+        onDragEnd = {
+            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+                "DragManager",
+                "PointerInputScope----onDragEnd"
+            )
+            dragInfoState.value?.let {
+//                val cardList = cardList[currentSel.value]
+//                val dragCard: GridItemData = SortUtils.findCurrentActorPix(cardList, it.posX, it.posY)
+//                    ?: return@detectDragGesturesAfterLongPress
+                it.isDrag = false
+//                dragInfoState.value = dragCard
+                dragUpState.value = false
+            }
+        },
+        onDragCancel = {
+            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+                "DragManager",
+                "PointerInputScope----onDragCancel"
+            )
+        }
+    ) { change, dragAmount ->
+        change.consume()
+        dragInfoState.value?.let {
+            // 更新被拖动的应用的浮点位置（posFx 和 posFy）
+            it.posFx += dragAmount.x
+            it.posFy += dragAmount.y
+            // dragAmount.x 和 dragAmount.y 是指针位置的变化量，它们被加到当前的位置上，从而更新应用的位置
+//                                        LogUtils.e("offx=${ it.posFx.toDp()} offy=${it.posFy.toDp()}")
+            // 将浮点位置转换为整数位置（posX 和 posY）。这是因为在Android中，位置通常以像素为单位，而像素必须是整数
+            it.posX = it.posFx.toDp().value.toInt()
+            it.posY = it.posFy.toDp().value.toInt()
+
+            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+                "DragManager",
+                "PointerInputScope----consume, dragAmount.x=${dragAmount.x}, " +
+                        "dragAmount.y=${dragAmount.y}, it.posX=${it.posX}, it.posY=${it.posY}"
+            )
+//            LogUtils.e("drag cellX = ${it.posX}  cellY=${it.posY}")
+            // 更新偏移量（offsetX 和 offsetY）。偏移量是指应用的当前位置与其原始位置的差值。
+            offsetX.value = dragAmount.x.toDp() + offsetX.value
+            offsetY.value = dragAmount.y.toDp() + offsetY.value
+            // 检查应用是否被拖动了一定的距离（APP_INFO_DRAG_DIS）。如果是，那么就清除应用管理器的状态（appManagerState）。
+//            if (abs(it.posX - it.orignX) > LauncherConfig.APP_INFO_DRAG_DIS || abs(it.posY - it.orignY) > LauncherConfig.APP_INFO_DRAG_DIS) {
+//                // 拖动了足够的距离，所以不再需要应用管理器的状态。
+//                appManagerState.value = null
+//            }
+        }
     }
 }

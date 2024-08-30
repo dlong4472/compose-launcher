@@ -1,6 +1,7 @@
 package com.lin.comlauncher.util
 
 import android.util.Log
+import androidx.compose.ui.unit.dp
 import com.lin.comlauncher.BuildConfig
 import com.lin.comlauncher.entity.ApplicationInfo
 import com.lin.comlauncher.view.GridItemData
@@ -267,8 +268,8 @@ object SortUtils {
     }
 
     fun findCurrentActorPix(list: List<List<GridItemData>>, pixX: Int, pixY: Int): GridItemData? {
-        val posX = DisplayUtils.pxToDp(pixX)
-        val posY = DisplayUtils.pxToDp(pixY)
+        val posXDp = DisplayUtils.pxToDp(pixX)
+        val posYDp = DisplayUtils.pxToDp(pixY)
 
         /**
          * (posX，posY) ----------
@@ -281,13 +282,13 @@ object SortUtils {
         run {
             list.forEach { l ->
                 l.forEach {
-                    val itemHeight = getItemHeight(it, it.cellSize, it.betweenPadding)
                     if (BuildConfig.DEBUG) Log.d(
                         "findCurrentActorPix",
-                        "list:${list.size} pixX=$pixX pixY=$pixY posX=$posX posY=$posY it=${it.posX} " +
-                                ",${it.posY} width=${it.cellCommonWidth} height=$itemHeight"
+                        "list:${list.size} posXDp=$posXDp posYDp=$posYDp it=${it.posX} " +
+                                ",${it.posY} width=${it.cellCommonWidth}, height=${it.cellHeight}"
                     )
-                    if (pixX >= it.posX && pixX < it.posX + it.cellCommonWidth && pixY >= it.posY && pixY < it.posY + itemHeight
+                    if (posXDp >= it.posX && posXDp < it.posX + it.cellCommonWidth &&
+                        posYDp >= it.posY && posYDp < it.posY + it.cellHeight
                     ) {
                         g = it
                         return@run

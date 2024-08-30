@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import com.gyf.immersionbar.ImmersionBar
 import com.lin.comlauncher.ui.theme.ComposeLauncherTheme
 import com.lin.comlauncher.util.DisplayUtils
@@ -31,9 +32,8 @@ import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
 import com.lin.comlauncher.util.LogUtils
 import com.lin.comlauncher.util.PermissionsUtil
-import com.lin.comlauncher.view.DesktopView
-import com.lin.comlauncher.view.InitView
 import com.lin.comlauncher.view.GridCardListView
+import com.lin.comlauncher.view.InitView
 import com.lin.comlauncher.view.getItemData
 import com.lin.comlauncher.viewmodel.HomeViewModel
 
@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
         val width = resources.displayMetrics.widthPixels
         val height = LauncherUtils.getScreenHeight3(this)
         homeViewModel.loadApp(packageManager, width = width, height = height, resources)
-        homeViewModel.loadCardList(screenHeightDp = height, getItemData())
+        homeViewModel.loadCardList(screenHeightDp = DisplayUtils.pxToDp(height), getItemData())
     }
 
     private val requestPermissionLauncher =
@@ -148,7 +148,7 @@ fun CreateView(homeViewModel: HomeViewModel) {
                 InitView()
             } else {
 //                DesktopView(lists = appList)
-                GridCardListView(cardList)
+                GridCardListView(cardList, outPadding = 20.dp, inPadding = 10.dp)
             }
         })
 

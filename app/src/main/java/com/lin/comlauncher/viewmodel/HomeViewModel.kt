@@ -9,7 +9,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -22,6 +22,7 @@ import com.lin.comlauncher.util.DisplayUtils
 import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
 import com.lin.comlauncher.view.GridItemData
+import com.lin.comlauncher.view.LogDebug
 import com.lin.comlauncher.view.reSortItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -196,11 +197,18 @@ class HomeViewModel : ViewModel() {
     }
 
     fun loadCardList(screenHeightDp: Int, items: MutableList<GridItemData>) {
-        val viewHeight = screenHeightDp
-        val betweenPadding = 10
-        val topBottomPadding = 20 * 2
-        val cellSize = (viewHeight - topBottomPadding - betweenPadding * 3) / 4
-        carList = reSortItems(viewHeight, betweenPadding, topBottomPadding, cellSize, items)
+        val betweenPadding = 10.dp.value.toInt()
+        val topBottomPadding = 20.dp.value.toInt() * 2
+        if(LogDebug)Log.d("loadCardList", "betweenPadding:$betweenPadding, pxToDp:${DisplayUtils.pxToDp(10)}")
+        val cellSize = (screenHeightDp - topBottomPadding - betweenPadding * 3) / 4
+        carList = reSortItems(
+            screenHeightDp,
+            betweenPadding,
+            topBottomPadding,
+            cellSize,
+            topBottomPadding / 2,
+            items
+        )
         loadInfoLiveData.postValue(++currentVersion)
     }
 

@@ -5,7 +5,7 @@ import com.lin.comlauncher.BuildConfig
 import com.lin.comlauncher.entity.ApplicationInfo
 import com.lin.comlauncher.view.GridItemData
 import com.lin.comlauncher.view.LogDebug
-import com.lin.comlauncher.view.LogDebug_PointerInputScope
+import com.lin.comlauncher.view.reSortItems
 
 object SortUtils {
     fun calculLeftPos(
@@ -224,6 +224,57 @@ object SortUtils {
 
     }
 
+    private val LogDebug_resetChoosePosGrid = true
+
+    /**
+     * 重置应用列表和工具列表中的应用位置
+     */
+    fun resetChoosePosGrid(
+        list: List<List<List<GridItemData>>>, item: GridItemData, itemReplaceId: Int?
+    ) {
+        if (itemReplaceId == null){
+            if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
+                "SortUtils",
+                "resetChoosePosGrid----itemReplaceId为空不处理"
+            )
+            return
+        }
+        var findReplace: GridItemData? = null
+        val itemsInput: MutableList<GridItemData> = mutableListOf()
+        run {
+            list.forEach { list ->
+                list.forEach { listSecond ->
+                    listSecond.forEach {
+                        if (itemReplaceId == it.id) {
+                            findReplace = it
+                        }
+                        itemsInput.add(it)
+                    }
+                }
+            }
+        }
+        findReplace?.let { itemReplace ->
+            if (item.cellHeight > itemReplace.cellHeight &&
+                itemReplace.posY + item.cellHeight > GridCardConfig.HOME_HEIGHT - GridCardConfig.DEFAULT_TOP_PADDING
+            ) {
+                if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
+                    "SortUtils",
+                    "resetChoosePosGrid----位置不合适返回不处理"
+                )
+                return
+            }
+            if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
+                "SortUtils",
+                "resetChoosePosGrid----${GridCardConfig.HOME_HEIGHT - GridCardConfig.DEFAULT_TOP_PADDING}, " +
+                        "${item.posX}, ${item.posY}, ${item.cellHeight}, " +
+                        "${itemReplace.posX}, ${itemReplace.posY}, ${itemReplace.cellHeight}, "
+            )
+            val itemsOutput = reSortItems(GridCardConfig.HOME_HEIGHT, item.betweenPadding,
+                GridCardConfig.DEFAULT_TOP_PADDING * 2, item.cellSize,
+                GridCardConfig.DEFAULT_TOP_PADDING, itemsInput, selectItem = item, replaceItem = itemReplace)
+        }
+    }
+
     fun findCurrentCellByPos(posX: Int, posY: Int): Int {
         val padding = 10
         if (posY < LauncherConfig.DEFAULT_TOP_PADDING) {
@@ -250,7 +301,7 @@ object SortUtils {
         return cellX + cellY * 4
     }
 
-    private val LogDebug_SortUtils = true
+    private val LogDebug_SortUtils = false
 
     fun findCurrentCellByPosGrid(posX: Int, posY: Int, list: List<List<GridItemData>>): Int {
         if (LogDebug && LogDebug_SortUtils) Log.d(

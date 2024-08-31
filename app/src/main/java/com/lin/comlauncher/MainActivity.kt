@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import com.gyf.immersionbar.ImmersionBar
 import com.lin.comlauncher.ui.theme.ComposeLauncherTheme
 import com.lin.comlauncher.util.DisplayUtils
@@ -151,7 +150,7 @@ fun CreateView(homeViewModel: HomeViewModel) {
                 InitView()
             } else {
 //                DesktopView(lists = appList)
-                GridCardListView(cardList, outPadding = 20.dp, inPadding = 10.dp)
+                GridCardListView(cardList)
             }
         })
 

@@ -27,6 +27,8 @@ import kotlin.math.abs
 @Suppress("unused")
 class DragManager
 
+const val LogDebug_PointerInputScope = false
+
 /**
  * 处理长按拖动手势的函数。它在用户长按屏幕后开始拖动时被触发，并执行一系列操作来处理拖动事件。
  * 1.在拖动开始时（onDragStart）：
@@ -109,7 +111,7 @@ suspend fun PointerInputScope.detectLongPress(
                 // 使设备振动。这是为了给用户一个反馈，表示应用正在被拖动。
                 LauncherUtils.vibrator(context = context)
             }
-            LogUtils.e("drag app ${it.name}")
+            if (LogDebug && LogDebug_PointerInputScope) LogUtils.e("drag app ${it.name}")
             // 更新拖动信息。这是一个包含被拖动的应用的 ApplicationInfo 对象。
             dragInfoState.value = it
             // 表示拖动手势已经开始。
@@ -157,7 +159,7 @@ suspend fun PointerInputScope.detectLongPress(
                         if (appInfo?.appType == LauncherConfig.CELL_TYPE_FOLD) {
                             continue
                         }
-                        LogUtils.e("cellIndex=${curX} preCell=${curY} name=${appInfo?.name} height=${appInfo?.height}")
+                        if (LogDebug && LogDebug_PointerInputScope) LogUtils.e("cellIndex=${curX} preCell=${curY} name=${appInfo?.name} height=${appInfo?.height}")
                         // 没有移动到新的单元格，并且没有停止拖动，那么就跳过这次循环
                         if (preCell == cellIndex && !dragStop) {
                             dragStop = true
@@ -268,7 +270,7 @@ suspend fun PointerInputScope.detectLongPress(
                     return@let
                 }
                 val appList = homeList[currentSel.value]
-                LogUtils.e("current=${currentSel.value} pagePos =${it.pagePos}")
+                if (LogDebug && LogDebug_PointerInputScope) LogUtils.e("current=${currentSel.value} pagePos =${it.pagePos}")
                 // 在处理拖动手势结束时，如果应用被拖动到了新的页面
                 if (it.pagePos != currentSel.value) {
                     // 获取当前选中的页面的应用列表
@@ -327,7 +329,7 @@ suspend fun PointerInputScope.detectLongPress(
                     // 查找当前位置的应用
                     val appInfo = SortUtils.findCurrentActorDp(list = appList, it.posX, it.posY)
                     // 打印当前位置的应用的类型和名称。
-                    LogUtils.e("appInfo=${appInfo?.appType} name=${appInfo?.name}")
+                    if (LogDebug && LogDebug_PointerInputScope) LogUtils.e("appInfo=${appInfo?.appType} name=${appInfo?.name}")
                     // 计算应用的位置。
                     SortUtils.calculPos(appList, it)
                     // 检查当前位置的应用是否是一个文件夹，并且被拖动的应用是一个普通应用，并且文件夹还有空位。如果是，那么就将应用添加到文件夹中。
@@ -394,7 +396,7 @@ suspend fun PointerInputScope.detectLongPress(
                 it.isDrag = false
                 // 拖动手势已经结束。
                 dragUpState.value = false
-                LogUtils.e("drag cancle")
+                if (LogDebug && LogDebug_PointerInputScope) LogUtils.e("drag cancle")
                 // 没有应用正在被拖动。
                 dragInfoState.value = null
             }
@@ -425,21 +427,21 @@ suspend fun PointerInputScope.detectLongPress(
     }
 }
 
-const val LogDebug_PointerInputScope = true
+const val LogDebug_PointerInputScope_Grid = true
 
 @OptIn(ExperimentalPagerApi::class)
 suspend fun PointerInputScope.detectLongPress(
     cardList: List<List<List<GridItemData>>>,
     currentSel: MutableState<Int>,
     coroutineAnimScope: CoroutineScope,
-    dragInfoState: MutableState<GridItemData?>,
+    dragInfoState: MutableState<GridItemData?>, animFinish: MutableState<Boolean>,
     dragUpState: MutableState<Boolean>,
     offsetX: MutableState<Dp>, offsetY: MutableState<Dp>,
     state: PagerState,
 ) {
     detectDragGesturesAfterLongPress(
         onDragStart = { off ->
-            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+            if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
                 "DragManager",
                 "PointerInputScope----onDragStart"
             )
@@ -485,69 +487,80 @@ suspend fun PointerInputScope.detectLongPress(
                     val curX = it.posX
                     val curY = it.posY
                     var movePage = false
-                    // cardList[currentSel.value] 拷贝一份
-                    val currentSelNow = currentSel.value
-                    // 如果当前选中的页面发生了变化，那么就更新 cardListSearch
-                    val cardListSearch = if(initCurrentSel == currentSelNow) listCopy else cardList[currentSelNow]
-                    // 被拖动经过的单元格
-                    val cellIndex =
-                        SortUtils.findCurrentCellByPosGrid(
-                            curX,
-                            curY,
-                            cardListSearch
-                        )
-                    // 没有移动到新的单元格，并且没有停止拖动，那么就跳过这次循环
-                    if (preCell == cellIndex && !dragStop) {
-                        dragStop = true
-                        disPlayTime = 0
-                        continue
-                    } else if (preCell != cellIndex) {
-                        dragStop = false
-                        disPlayTime = 0
-                    } else {
-                        disPlayTime++
-                    }
-                    preCell = cellIndex
-                    // 在同一个单元格内停留的时间超过1个时间单位，才会执行这个条件块
-                    if (disPlayTime >= 1) {
-                        // 检查应用是否被拖动到了屏幕的边缘，如果是，那么就滚动屏幕
-                        if (cellIndex == LauncherConfig.CELL_POS_HOME_LEFT) {
-                            if (state.currentPage - 1 >= 0) {
-                                // 如果是，那么就滚动屏幕
-                                state.animateScrollToPage(state.currentPage - 1)
-                                movePage = true
-                            }
 
-                        } else if (cellIndex == LauncherConfig.CELL_POS_HOME_RIGHT) {
-                            if (state.currentPage + 1 < state.pageCount) {
-                                // 如果是，那么就滚动屏幕
-                                state.animateScrollToPage(state.currentPage + 1)
-                                movePage = true
-                            }
-                        }
-
-                        if (movePage) {
-//                                LogUtils.e("movePage")
-                            delay(800)
+                    if (!animFinish.value) {
+                        // cardList[currentSel.value] 拷贝一份
+                        val currentSelNow = currentSel.value
+                        // 如果当前选中的页面发生了变化，那么就更新 cardListSearch
+                        val cardListSearch =
+                            if (initCurrentSel == currentSelNow) listCopy else cardList[currentSelNow]
+                        // 被拖动经过的单元格
+                        val cellIndex =
+                            SortUtils.findCurrentCellByPosGrid(
+                                curX,
+                                curY,
+                                cardListSearch
+                            )
+                        // 没有移动到新的单元格，并且没有停止拖动，那么就跳过这次循环
+                        if (preCell == cellIndex && !dragStop) {
+                            dragStop = true
+                            disPlayTime = 0
                             continue
+                        } else if (preCell != cellIndex) {
+                            dragStop = false
+                            disPlayTime = 0
+                        } else {
+                            disPlayTime++
                         }
+                        preCell = cellIndex
+                        // 在同一个单元格内停留的时间超过1个时间单位，才会执行这个条件块
+                        if (disPlayTime >= 1) {
+                            // 左右翻页 ------------------------------------- start
+                            // 检查应用是否被拖动到了屏幕的边缘，如果是，那么就滚动屏幕
+                            if (cellIndex == LauncherConfig.CELL_POS_HOME_LEFT) {
+                                if (state.currentPage - 1 >= 0) {
+                                    // 如果是，那么就滚动屏幕
+                                    state.animateScrollToPage(state.currentPage - 1)
+                                    movePage = true
+                                }
+
+                            } else if (cellIndex == LauncherConfig.CELL_POS_HOME_RIGHT) {
+                                if (state.currentPage + 1 < state.pageCount) {
+                                    // 如果是，那么就滚动屏幕
+                                    state.animateScrollToPage(state.currentPage + 1)
+                                    movePage = true
+                                }
+                            }
+
+                            if (movePage) {
+                                delay(800)
+                                continue
+                            }
+                            // 左右翻页 ------------------------------------- end
 
 //                        if (LogDebug && LogDebug_PointerInputScope) Log.d(
 //                            "DragManager",
 //                            "PointerInputScope----onDragStart----disPlayTime:$disPlayTime"
 //                        )
-                        if (disPlayTime == 1) {
-                            if (LogDebug && LogDebug_PointerInputScope) Log.d(
-                                "DragManager",
-                                "PointerInputScope----onDragStart----currentSel.value:${currentSel.value}, cellIndex:$cellIndex"
-                            )
+                            if (disPlayTime == 1) {
+                                if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
+                                    "DragManager",
+                                    "PointerInputScope----onDragStart----currentSel.value:${currentSel.value}, cellIndex:$cellIndex"
+                                )
+                                // 重新排序
+                                SortUtils.resetChoosePosGrid(
+                                    cardList,
+                                    it, cellIndex
+                                )
+                            }
                         }
                     }
+
                 }
             }
         },
         onDragEnd = {
-            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+            if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
                 "DragManager",
                 "PointerInputScope----onDragEnd"
             )
@@ -561,7 +574,7 @@ suspend fun PointerInputScope.detectLongPress(
             }
         },
         onDragCancel = {
-            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+            if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
                 "DragManager",
                 "PointerInputScope----onDragCancel"
             )

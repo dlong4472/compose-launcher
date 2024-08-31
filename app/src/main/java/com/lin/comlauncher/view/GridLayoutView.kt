@@ -4,10 +4,7 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -30,27 +27,26 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import com.lin.comlauncher.BuildConfig
 import com.lin.comlauncher.util.DisplayUtils
 import com.lin.comlauncher.util.GridCardConfig
 import com.lin.comlauncher.util.SortUtils.getItemHeight
 
-const val LogDebug = true
-const val LogDebug_GridCardListView = true
+val LogDebug = BuildConfig.DEBUG
+const val LogDebug_GridCardListView = false
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun GridCardListView(
     columns: MutableList<List<GridItemData>>, pagerIndex: Int = 0,
-    outPadding: Dp,
-    inPadding: Dp
 ) {
+    var animFinish = remember { mutableStateOf(false) }
     val coroutineAnimScope = rememberCoroutineScope()
     val dragInfoState = remember { mutableStateOf<GridItemData?>(null) }
     val dragUpState = remember {
@@ -80,6 +76,7 @@ fun GridCardListView(
                     coroutineAnimScope = coroutineAnimScope,
                     dragUpState = dragUpState,
                     dragInfoState = dragInfoState,
+                    animFinish = animFinish,
                     offsetX = offsetX,
                     offsetY = offsetY,
                     state = pagerState
@@ -93,8 +90,6 @@ fun GridCardListView(
         currentSelect.value = pagerState.currentPage
         GridList(
             groupedColumns[page],
-            outPadding = outPadding,
-            inPadding = inPadding
         )
     }
 
@@ -109,15 +104,24 @@ fun GridCardListView(
                 "GridCardListView----dragInfoState.value：${it.id}, " +
                         "posX:${it.posX}, posY:${it.posY}, posFx:${it.posFx}, posFy:${it.posFy}"
             )
+            val width = LocalConfiguration.current.screenWidthDp
+            val height = LocalConfiguration.current.screenHeightDp
             Box(
-                modifier = Modifier
-                    .offset(it.posX.dp, it.posY.dp)
-                    .border(2.dp, Color.Red)
+                Modifier
+                    .width(width = width.dp)
+                    .height(height = height.dp)
+                    .offset(0.dp, 0.dp)
             ) {
                 CardView(
                     it,
                     initPos = false,
                     isAlpha = false
+                )
+                Box(
+                    modifier = Modifier
+                        .size(it.cellCommonWidth.dp, it.cellHeight.dp)
+                        .offset(it.posX.dp, it.posY.dp)
+                        .border(2.dp, Color.Red)
                 )
             }
 
@@ -135,61 +139,24 @@ fun GridCardListView(
 @Composable
 fun GridList(
     columns: List<List<GridItemData>>,
-    outPadding: Dp,
-    inPadding: Dp
 ) {
     val width = LocalConfiguration.current.screenWidthDp
     val height = LocalConfiguration.current.screenHeightDp
-    Column(
-        modifier = Modifier
+    Box(
+        Modifier
             .width(width = width.dp)
             .height(height = height.dp)
             .offset(0.dp, 0.dp)
-
     ) {
-        Box(
-            modifier = Modifier
-                .size(outPadding)
-        )
-        Row {
-            Box(
-                modifier = Modifier
-                    .size(outPadding)
-            )
-            var rowIndex = 0
-            columns.forEach { rowList ->
-                Column {
-                    var columnIndex = 0
-                    rowList.forEach { item ->
-                        CardView(item)
-                        val isLast = columnIndex == rowList.size - 1
-                        if (!isLast) Box(
-                            modifier = Modifier
-                                .size(inPadding)
-                        )
-                        columnIndex++
-                    }
-                }
-                val isLast = rowIndex == columns.size - 1
-                if (!isLast) Box(
-                    modifier = Modifier
-                        .size(inPadding)
-                )
-                rowIndex += 1
+        columns.forEach { rowList ->
+            rowList.forEach { item ->
+                CardView(item)
             }
-            Box(
-                modifier = Modifier
-                    .size(outPadding)
-            )
         }
-        Box(
-            modifier = Modifier
-                .size(outPadding)
-        )
     }
 }
 
-private const val LogDebug_CardView = true
+private const val LogDebug_CardView = false
 
 @Composable
 fun CardView(
@@ -203,6 +170,7 @@ fun CardView(
                 width = i.cellCommonWidth.dp,
                 height = i.cellHeight.dp
             )
+            .offset(i.posX.dp, i.posY.dp)
             .alpha(if (isAlpha) (if (i.isDrag) 0f else 1f) else 1f)
             .background(Color.Yellow)
             .onGloballyPositioned { layoutCoordinates ->
@@ -246,8 +214,6 @@ fun GridCardListViewPreview(@PreviewParameter(GridItemDataProvider::class) list:
     GridCardListView(
         columns,
         pagerIndex = 0,
-        outPadding = topBottomPaddingDp,
-        inPadding = betweenPaddingDp
     )
 }
 
@@ -257,14 +223,16 @@ private const val LogDebug_reSortItems = false
  * 重新排序卡片列表
  */
 @Synchronized
-@Suppress("SameParameterValue")
 fun reSortItems(
     viewHeight: Int,
     betweenPadding: Int,
     topBottomPadding: Int,
     cellSize: Int,
     outPadding: Int = 0,
-    items: MutableList<GridItemData>
+    items: MutableList<GridItemData>,
+    initCellSize: Boolean = true,
+    selectItem: GridItemData? = null,
+    replaceItem: GridItemData? = null
 ): MutableList<List<GridItemData>> {
     if (LogDebug && LogDebug_reSortItems) Log.d(
         "GridLayoutView",
@@ -365,7 +333,7 @@ fun reSortItems(
     if (currentColumnItems.isNotEmpty()) {
         columns.add(currentColumnItems)
     }
-    initCellSize(betweenPadding, cellSize, outPadding, columns)
+    if (initCellSize) initCellSize(betweenPadding, cellSize, outPadding, columns)
     return columns
 }
 

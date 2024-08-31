@@ -3,6 +3,8 @@ package com.lin.comlauncher.view
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -34,6 +37,7 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import com.lin.comlauncher.util.DisplayUtils
+import com.lin.comlauncher.util.GridCardConfig
 import com.lin.comlauncher.util.SortUtils.getItemHeight
 
 const val LogDebug = true
@@ -47,6 +51,7 @@ fun GridCardListView(
     outPadding: Dp,
     inPadding: Dp
 ) {
+    val coroutineAnimScope = rememberCoroutineScope()
     val dragInfoState = remember { mutableStateOf<GridItemData?>(null) }
     val dragUpState = remember {
         mutableStateOf(false)
@@ -64,6 +69,7 @@ fun GridCardListView(
                 " pagerState:${pagerState.pageCount}"
     )
     HorizontalPager(
+        userScrollEnabled = !dragUpState.value,
         count = pagerSize, state = pagerState, modifier = Modifier
             .fillMaxSize()
             .background(Color.Gray)
@@ -71,10 +77,12 @@ fun GridCardListView(
                 detectLongPress(
                     cardList = groupedColumns,
                     currentSel = currentSelect,
+                    coroutineAnimScope = coroutineAnimScope,
                     dragUpState = dragUpState,
                     dragInfoState = dragInfoState,
                     offsetX = offsetX,
-                    offsetY = offsetY
+                    offsetY = offsetY,
+                    state = pagerState
                 )
             }
     ) { page ->
@@ -101,10 +109,10 @@ fun GridCardListView(
                 "GridCardListView----dragInfoState.value：${it.id}, " +
                         "posX:${it.posX}, posY:${it.posY}, posFx:${it.posFx}, posFy:${it.posFy}"
             )
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Box(
                 modifier = Modifier
                     .offset(it.posX.dp, it.posY.dp)
+                    .border(2.dp, Color.Red)
             ) {
                 CardView(
                     it,
@@ -235,7 +243,12 @@ fun GridCardListViewPreview(@PreviewParameter(GridItemDataProvider::class) list:
         outPadding = topBottomPadding / 2,
         list
     )
-    GridCardListView(columns, pagerIndex = 0, outPadding = topBottomPaddingDp, inPadding = betweenPaddingDp)
+    GridCardListView(
+        columns,
+        pagerIndex = 0,
+        outPadding = topBottomPaddingDp,
+        inPadding = betweenPaddingDp
+    )
 }
 
 private const val LogDebug_reSortItems = false
@@ -364,7 +377,11 @@ private fun initCellSize(
     outPadding: Int,
     columns: MutableList<List<GridItemData>>
 ) {
+    GridCardConfig.DEFAULT_TOP_PADDING = outPadding
+    GridCardConfig.HOME_DEFAULT_PADDING_LEFT = GridCardConfig.DEFAULT_TOP_PADDING
+    GridCardConfig.HOME_TOOLBAR_START = GridCardConfig.DEFAULT_TOP_PADDING
     val cellCommonWidth = cellSize * 2 + betweenPadding
+    GridCardConfig.HOME_CELL_WIDTH = DisplayUtils.dpToPx(cellCommonWidth)
     // init common value
     val groupedColumns = columns.chunked(3)
     var groupedColumnsIndex = 0
@@ -411,7 +428,21 @@ data class GridItemData(
     var cellCommonWidth: Int = 0,
     var cellSize: Int = 0,
     var cellHeight: Int = 0
-)
+) {
+    fun deepCopy() = GridItemData(
+        id = id,
+        height = height,
+        isDrag = isDrag,
+        posX = posX,
+        posY = posY,
+        posFx = posFx,
+        posFy = posFy,
+        betweenPadding = betweenPadding,
+        cellCommonWidth = cellCommonWidth,
+        cellSize = cellSize,
+        cellHeight = cellHeight
+    )
+}
 
 class GridItemDataProvider : PreviewParameterProvider<MutableList<GridItemData>> {
     override val values: Sequence<MutableList<GridItemData>>

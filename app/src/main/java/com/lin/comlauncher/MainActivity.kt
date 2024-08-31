@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.gyf.immersionbar.ImmersionBar
 import com.lin.comlauncher.ui.theme.ComposeLauncherTheme
 import com.lin.comlauncher.util.DisplayUtils
+import com.lin.comlauncher.util.GridCardConfig
 import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
 import com.lin.comlauncher.util.LogUtils
@@ -123,6 +124,8 @@ fun CreateView(homeViewModel: HomeViewModel) {
     val height = LocalConfiguration.current.screenHeightDp
     LauncherConfig.HOME_WIDTH = width
     LauncherConfig.HOME_HEIGHT = height
+    GridCardConfig.HOME_WIDTH = width
+    GridCardConfig.HOME_HEIGHT = height
     val versionLiveState = homeViewModel.appVersionLiveData.observeAsState()
     val appList = homeViewModel.infoBaseBean
     val cardList = homeViewModel.carList

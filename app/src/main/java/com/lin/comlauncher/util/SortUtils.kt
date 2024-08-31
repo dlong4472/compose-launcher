@@ -1,10 +1,11 @@
 package com.lin.comlauncher.util
 
 import android.util.Log
-import androidx.compose.ui.unit.dp
 import com.lin.comlauncher.BuildConfig
 import com.lin.comlauncher.entity.ApplicationInfo
 import com.lin.comlauncher.view.GridItemData
+import com.lin.comlauncher.view.LogDebug
+import com.lin.comlauncher.view.LogDebug_PointerInputScope
 
 object SortUtils {
     fun calculLeftPos(
@@ -249,6 +250,36 @@ object SortUtils {
         return cellX + cellY * 4
     }
 
+    private val LogDebug_SortUtils = true
+
+    fun findCurrentCellByPosGrid(posX: Int, posY: Int, list: List<List<GridItemData>>): Int {
+        if (LogDebug && LogDebug_SortUtils) Log.d(
+            "SortUtils",
+            "findCurrentCellByPosGrid----posX:$posX, posY:$posY"
+        )
+        if (posY < GridCardConfig.DEFAULT_TOP_PADDING) {
+            return -1
+        }
+        if (posX <= GridCardConfig.HOME_DEFAULT_PADDING_LEFT)
+            return GridCardConfig.CELL_POS_HOME_LEFT
+        if (posX >= GridCardConfig.HOME_WIDTH - GridCardConfig.HOME_DEFAULT_PADDING_LEFT)
+            return GridCardConfig.CELL_POS_HOME_RIGHT
+
+//        if (posY >= GridCardConfig.HOME_TOOLBAR_START) {
+//            val pos = (posX + GridCardConfig.HOME_CELL_WIDTH / 2) / GridCardConfig.HOME_CELL_WIDTH
+//            return -pos - 100
+//        }
+
+        val dragCard: GridItemData? = findCurrentActorPixDp(list, posX, posY)
+
+        if (LogDebug && LogDebug_SortUtils) Log.d(
+            "SortUtils",
+            "findCurrentCellByPosGrid----dragCard:${dragCard?.id}"
+        )
+
+        return dragCard?.id ?: -1000
+    }
+
     fun findCurrentActorPix(list: List<ApplicationInfo>, pixX: Int, pixY: Int): ApplicationInfo? {
         val posX = DisplayUtils.pxToDp(pixX)
         val posY = DisplayUtils.pxToDp(pixY)
@@ -282,13 +313,42 @@ object SortUtils {
         run {
             list.forEach { l ->
                 l.forEach {
-                    if (BuildConfig.DEBUG) Log.d(
-                        "findCurrentActorPix",
-                        "list:${list.size} posXDp=$posXDp posYDp=$posYDp it=${it.posX} " +
-                                ",${it.posY} width=${it.cellCommonWidth}, height=${it.cellHeight}"
-                    )
+//                    if (BuildConfig.DEBUG) Log.d(
+//                        "findCurrentActorPix",
+//                        "list:${list.size} posXDp=$posXDp posYDp=$posYDp it=${it.posX} " +
+//                                ",${it.posY} width=${it.cellCommonWidth}, height=${it.cellHeight}"
+//                    )
                     if (posXDp >= it.posX && posXDp < it.posX + it.cellCommonWidth &&
                         posYDp >= it.posY && posYDp < it.posY + it.cellHeight
+                    ) {
+                        g = it
+                        return@run
+                    }
+                }
+            }
+        }
+        return g
+    }
+
+    fun findCurrentActorPixDp(list: List<List<GridItemData>>, pixX: Int, pixY: Int): GridItemData? {
+        /**
+         * (posX，posY) ----------
+         *             |          |
+         *             |          |
+         *             |          |
+         *             ------------ (posX + width, posY + height)
+         */
+        var g: GridItemData? = null
+        run {
+            list.forEach { l ->
+                l.forEach {
+                    if (BuildConfig.DEBUG) Log.d(
+                        "findCurrentActorPix",
+                        "it:${it.id} list:${list.size} pixX=$pixX pixY=$pixY it=${it.posX} " +
+                                ",${it.posY} width=${it.cellCommonWidth}, height=${it.cellHeight}"
+                    )
+                    if (pixX >= it.posX && pixX < it.posX + it.cellCommonWidth &&
+                        pixY >= it.posY && pixY < it.posY + it.cellHeight
                     ) {
                         g = it
                         return@run
@@ -365,6 +425,33 @@ object SortUtils {
 
         val cellY = (posY - LauncherConfig.DEFAULT_TOP_PADDING
                 + LauncherConfig.HOME_CELL_HEIGHT / 2) / LauncherConfig.HOME_CELL_HEIGHT
+//        LogUtils.e("cell=$cellX  cellY=$cellY de=${posX / (LauncherConfig.HOME_WIDTH/8)}")
+
+        return cellX + cellY * 4
+    }
+
+    fun findCurrentCellGrid(posX: Int, posY: Int, list: List<List<GridItemData>>): Int {
+        if (posY < GridCardConfig.DEFAULT_TOP_PADDING - GridCardConfig.CELL_ICON_WIDTH / 2) {
+            return -1
+        }
+        val centerX = posX + GridCardConfig.HOME_CELL_WIDTH
+//        LogUtils.e("posX = $posX width=${LauncherConfig.HOME_WIDTH}")
+
+        if (posX <= -GridCardConfig.HOME_CELL_WIDTH / 3) {
+            return GridCardConfig.CELL_POS_HOME_LEFT
+        } else if (posX >= GridCardConfig.HOME_WIDTH - GridCardConfig.HOME_CELL_WIDTH * 2 / 3) {
+            return GridCardConfig.CELL_POS_HOME_RIGHT
+        }
+        if (posY >= GridCardConfig.HOME_TOOLBAR_START - 40) {
+            val pos = (posX + GridCardConfig.HOME_CELL_WIDTH / 2) / GridCardConfig.HOME_CELL_WIDTH
+            return -pos - 100
+        }
+
+        val cellX = (posX + GridCardConfig.HOME_CELL_WIDTH / 2) / GridCardConfig.HOME_CELL_WIDTH
+
+
+        val cellY = (posY - GridCardConfig.DEFAULT_TOP_PADDING
+                + GridCardConfig.HOME_CELL_HEIGHT / 2) / GridCardConfig.HOME_CELL_HEIGHT
 //        LogUtils.e("cell=$cellX  cellY=$cellY de=${posX / (LauncherConfig.HOME_WIDTH/8)}")
 
         return cellX + cellY * 4

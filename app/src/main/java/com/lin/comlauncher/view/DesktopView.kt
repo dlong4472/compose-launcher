@@ -50,7 +50,7 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
     var time1 = System.currentTimeMillis()
     var width = LocalConfiguration.current.screenWidthDp
     var height = LocalConfiguration.current.screenHeightDp
-    var widthPx = DisplayUtils.dpToPx(width);
+    var widthPx = DisplayUtils.dpToPx(width)
     val state = rememberLazyListState()
     var foldOpenState = remember { mutableStateOf<MutableList<ApplicationInfo>>(mutableListOf()) }
 //    var scrollWidth = remember { mutableStateOf(0) }
@@ -74,7 +74,7 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
     var toolBarList = lists.toobarList
 
     //draw dot
-    var dotWidth = 8;
+    var dotWidth = 8
     var indicationDot = homeList.size * dotWidth + (homeList.size - 1) * 6
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -258,7 +258,7 @@ fun DesktopView(@PreviewParameter(DesktopViewPreviewProvider::class) lists: AppI
 //                Modifier.offset(20.dp, 30.dp)
 //            )
 //        }
-//        lastTime = System.currentTimeMillis();
+//        lastTime = System.currentTimeMillis()
 //    }
 }
 

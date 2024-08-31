@@ -8,6 +8,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.PagerState
 import com.lin.comlauncher.entity.AppManagerBean
 import com.lin.comlauncher.entity.AppPos
 import com.lin.comlauncher.entity.ApplicationInfo
@@ -425,12 +427,15 @@ suspend fun PointerInputScope.detectLongPress(
 
 const val LogDebug_PointerInputScope = true
 
+@OptIn(ExperimentalPagerApi::class)
 suspend fun PointerInputScope.detectLongPress(
     cardList: List<List<List<GridItemData>>>,
     currentSel: MutableState<Int>,
+    coroutineAnimScope: CoroutineScope,
     dragInfoState: MutableState<GridItemData?>,
     dragUpState: MutableState<Boolean>,
     offsetX: MutableState<Dp>, offsetY: MutableState<Dp>,
+    state: PagerState,
 ) {
     detectDragGesturesAfterLongPress(
         onDragStart = { off ->
@@ -438,9 +443,10 @@ suspend fun PointerInputScope.detectLongPress(
                 "DragManager",
                 "PointerInputScope----onDragStart"
             )
-            val cardList = cardList[currentSel.value]
+            val initCurrentSel = currentSel.value
+            val list = cardList[initCurrentSel]
             val dragCard: GridItemData =
-                SortUtils.findCurrentActorPix(cardList, off.x.toInt(), off.y.toInt())
+                SortUtils.findCurrentActorPix(list, off.x.toInt(), off.y.toInt())
                     ?: return@detectDragGesturesAfterLongPress
             dragCard.also { card -> // 如果找到了被拖动的应用，那么就执行大括号中的代码。
                 card.posFx = card.posX.dp.toPx()
@@ -449,6 +455,96 @@ suspend fun PointerInputScope.detectLongPress(
             dragCard.isDrag = true
             dragInfoState.value = dragCard
             dragUpState.value = true
+            val it = dragCard
+            val listCopy: MutableList<List<GridItemData>> = mutableListOf()
+            cardList.forEach {
+                val list = mutableListOf<GridItemData>()
+                it.forEach { iList ->
+                    iList.forEach { iDetail ->
+                        list.add(iDetail.deepCopy())
+                    }
+                }
+                listCopy.add(list)
+            }
+            coroutineAnimScope.launch {
+                // 获取当前指针位置对应的单元格。
+                var preCell =
+                    SortUtils.findCurrentCellByPosGrid(
+                        DisplayUtils.pxToDp(off.x.toInt()),
+                        DisplayUtils.pxToDp(off.y.toInt()),
+                        listCopy
+                    )
+                var disPlayTime = 0
+                var dragStop = false
+                // 还在被拖动，就会一直执行
+                while (it.isDrag) {
+                    // 让当前的协程暂停150毫秒，这是为了让拖动手势有一个平滑的效果
+                    delay(150)
+                    if (!it.isDrag)
+                        break
+                    val curX = it.posX
+                    val curY = it.posY
+                    var movePage = false
+                    // cardList[currentSel.value] 拷贝一份
+                    val currentSelNow = currentSel.value
+                    // 如果当前选中的页面发生了变化，那么就更新 cardListSearch
+                    val cardListSearch = if(initCurrentSel == currentSelNow) listCopy else cardList[currentSelNow]
+                    // 被拖动经过的单元格
+                    val cellIndex =
+                        SortUtils.findCurrentCellByPosGrid(
+                            curX,
+                            curY,
+                            cardListSearch
+                        )
+                    // 没有移动到新的单元格，并且没有停止拖动，那么就跳过这次循环
+                    if (preCell == cellIndex && !dragStop) {
+                        dragStop = true
+                        disPlayTime = 0
+                        continue
+                    } else if (preCell != cellIndex) {
+                        dragStop = false
+                        disPlayTime = 0
+                    } else {
+                        disPlayTime++
+                    }
+                    preCell = cellIndex
+                    // 在同一个单元格内停留的时间超过1个时间单位，才会执行这个条件块
+                    if (disPlayTime >= 1) {
+                        // 检查应用是否被拖动到了屏幕的边缘，如果是，那么就滚动屏幕
+                        if (cellIndex == LauncherConfig.CELL_POS_HOME_LEFT) {
+                            if (state.currentPage - 1 >= 0) {
+                                // 如果是，那么就滚动屏幕
+                                state.animateScrollToPage(state.currentPage - 1)
+                                movePage = true
+                            }
+
+                        } else if (cellIndex == LauncherConfig.CELL_POS_HOME_RIGHT) {
+                            if (state.currentPage + 1 < state.pageCount) {
+                                // 如果是，那么就滚动屏幕
+                                state.animateScrollToPage(state.currentPage + 1)
+                                movePage = true
+                            }
+                        }
+
+                        if (movePage) {
+//                                LogUtils.e("movePage")
+                            delay(800)
+                            continue
+                        }
+
+//                        if (LogDebug && LogDebug_PointerInputScope) Log.d(
+//                            "DragManager",
+//                            "PointerInputScope----onDragStart----disPlayTime:$disPlayTime"
+//                        )
+                        if (disPlayTime == 1) {
+                            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+                                "DragManager",
+                                "PointerInputScope----onDragStart----currentSel.value:${currentSel.value}, cellIndex:$cellIndex"
+                            )
+                        }
+                    }
+                }
+            }
         },
         onDragEnd = {
             if (LogDebug && LogDebug_PointerInputScope) Log.d(
@@ -482,11 +578,11 @@ suspend fun PointerInputScope.detectLongPress(
             it.posX = it.posFx.toDp().value.toInt()
             it.posY = it.posFy.toDp().value.toInt()
 
-            if (LogDebug && LogDebug_PointerInputScope) Log.d(
-                "DragManager",
-                "PointerInputScope----consume, dragAmount.x=${dragAmount.x}, " +
-                        "dragAmount.y=${dragAmount.y}, it.posX=${it.posX}, it.posY=${it.posY}"
-            )
+//            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+//                "DragManager",
+//                "PointerInputScope----consume, dragAmount.x=${dragAmount.x}, " +
+//                        "dragAmount.y=${dragAmount.y}, it.posX=${it.posX}, it.posY=${it.posY}"
+//            )
 //            LogUtils.e("drag cellX = ${it.posX}  cellY=${it.posY}")
             // 更新偏移量（offsetX 和 offsetY）。偏移量是指应用的当前位置与其原始位置的差值。
             offsetX.value = dragAmount.x.toDp() + offsetX.value

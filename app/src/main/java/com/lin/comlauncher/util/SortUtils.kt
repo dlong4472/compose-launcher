@@ -232,10 +232,31 @@ object SortUtils {
     fun resetChoosePosGrid(
         list: List<List<List<GridItemData>>>, item: GridItemData, itemReplaceId: Int?
     ) {
-        if (itemReplaceId == null){
+        list.forEach { listFirst ->
+            listFirst.forEach { listSecond ->
+                listSecond.forEach {
+                    if (item.id != it.id) {
+                        it.orignX = it.posX
+                        it.orignY = it.posY
+                    }
+                    if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
+                        "SortUtils", "resetChoosePosGrid----" +
+                                "重新排序前----items----id:${it.id}, posX:${it.posX}, posY:${it.posY}, orignX:${it.orignX}, orignY:${it.orignY}, needMoveX:${it.needMoveX}, needMoveY:${it.needMoveY}"
+                    )
+                }
+            }
+        }
+        if (itemReplaceId == null) {
             if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
                 "SortUtils",
                 "resetChoosePosGrid----itemReplaceId为空不处理"
+            )
+            return
+        }
+        if (itemReplaceId == item.id) {
+            if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
+                "SortUtils",
+                "resetChoosePosGrid----id相同不处理"
             )
             return
         }
@@ -269,9 +290,45 @@ object SortUtils {
                         "${item.posX}, ${item.posY}, ${item.cellHeight}, " +
                         "${itemReplace.posX}, ${itemReplace.posY}, ${itemReplace.cellHeight}, "
             )
-            val itemsOutput = reSortItems(GridCardConfig.HOME_HEIGHT, item.betweenPadding,
-                GridCardConfig.DEFAULT_TOP_PADDING * 2, item.cellSize,
-                GridCardConfig.DEFAULT_TOP_PADDING, itemsInput, selectItem = item, replaceItem = itemReplace)
+            item.orignX = itemReplace.posX
+            item.orignY = itemReplace.posY
+            val reSortList = reSortItems(
+                GridCardConfig.HOME_HEIGHT,
+                item.betweenPadding,
+                GridCardConfig.DEFAULT_TOP_PADDING * 2,
+                item.cellSize,
+                GridCardConfig.DEFAULT_TOP_PADDING,
+                itemsInput,
+                selectItem = item,
+                replaceItem = itemReplace
+            )
+            reSortList.forEach { reList ->
+                reList.forEach { reIt ->
+                    run {
+                        list.forEach { list ->
+                            list.forEach { listSecond ->
+                                listSecond.forEach {
+                                    if (reIt.id == it.id) {
+                                        it.needMoveX = reIt.needMoveX
+                                        it.needMoveY = reIt.needMoveY
+                                        return@run
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            list.forEach { listFirst ->
+                listFirst.forEach { listSecond ->
+                    listSecond.forEach { reIt ->
+                        if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
+                            "SortUtils", "resetChoosePosGrid----" +
+                                    "重新排序后----items----id:${reIt.id}, posX:${reIt.posX}, posY:${reIt.posY}, orignX:${reIt.orignX}, orignX:${reIt.orignX}, needMoveX:${reIt.needMoveX}, needMoveY:${reIt.needMoveY}"
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -381,6 +438,8 @@ object SortUtils {
         return g
     }
 
+    private val LogDebug_findCurrentActorPixDp = false
+
     fun findCurrentActorPixDp(list: List<List<GridItemData>>, pixX: Int, pixY: Int): GridItemData? {
         /**
          * (posX，posY) ----------
@@ -393,7 +452,7 @@ object SortUtils {
         run {
             list.forEach { l ->
                 l.forEach {
-                    if (BuildConfig.DEBUG) Log.d(
+                    if (BuildConfig.DEBUG && LogDebug_findCurrentActorPixDp) Log.d(
                         "findCurrentActorPix",
                         "it:${it.id} list:${list.size} pixX=$pixX pixY=$pixY it=${it.posX} " +
                                 ",${it.posY} width=${it.cellCommonWidth}, height=${it.cellHeight}"

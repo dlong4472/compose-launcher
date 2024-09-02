@@ -433,7 +433,7 @@ const val LogDebug_PointerInputScope_Grid = true
 suspend fun PointerInputScope.detectLongPress(
     cardList: List<List<List<GridItemData>>>,
     currentSel: MutableState<Int>,
-    coroutineAnimScope: CoroutineScope,
+    coroutineScope: CoroutineScope, coroutineAnimScope: CoroutineScope,
     dragInfoState: MutableState<GridItemData?>, animFinish: MutableState<Boolean>,
     dragUpState: MutableState<Boolean>,
     offsetX: MutableState<Dp>, offsetY: MutableState<Dp>,
@@ -487,7 +487,6 @@ suspend fun PointerInputScope.detectLongPress(
                     val curX = it.posX
                     val curY = it.posY
                     var movePage = false
-
                     if (!animFinish.value) {
                         // cardList[currentSel.value] 拷贝一份
                         val currentSelNow = currentSel.value
@@ -545,13 +544,58 @@ suspend fun PointerInputScope.detectLongPress(
                             if (disPlayTime == 1) {
                                 if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
                                     "DragManager",
-                                    "PointerInputScope----onDragStart----currentSel.value:${currentSel.value}, cellIndex:$cellIndex"
+                                    "PointerInputScope----onDragStart----currentSel.value:${currentSel.value}, it:${it.id}, cellIndex:$cellIndex"
                                 )
                                 // 重新排序
                                 SortUtils.resetChoosePosGrid(
                                     cardList,
                                     it, cellIndex
                                 )
+                                val xScale = 100
+                                val yScale = 100
+                                animFinish.value = true
+                                DoTranslateAnim(
+                                    AppPos(0, 0),
+                                    AppPos(100, 100),
+                                    300
+                                ) { appPos, _ ->
+                                    cardList.forEach { lFirst ->
+                                        lFirst.forEach { lSecond ->
+                                            lSecond.forEach { info ->
+                                                if (info.id == it.id || (info.needMoveX == 0 && info.needMoveY == 0)) {
+                                                } else {
+                                                    info.posX =
+                                                        info.orignX + (info.needMoveX - (xScale - appPos.x) * info.needMoveX / xScale)
+                                                    info.posY =
+                                                        info.orignY + (info.needMoveY - (yScale - appPos.y) * info.needMoveY / yScale)
+
+                                                    if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
+                                                        "DragManager",
+                                                        "PointerInputScope----onDragStart----DoTranslateAnim, ${appPos.x},${appPos.y}, ${info.id},${info.needMoveX},${info.needMoveY},,${info.posX},${info.posY}," +
+                                                                "${(xScale - appPos.x) * info.needMoveX / xScale},${(yScale - appPos.y) * info.needMoveY / yScale}"
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                    offsetX.value = appPos.x.dp
+                                    offsetY.value = appPos.y.dp
+                                }
+                                // 更新所有应用的位置
+                                cardList.forEach { lFirst ->
+                                    lFirst.forEach { lSecond ->
+                                        lSecond.forEach { info ->
+                                            if (info.id != it.id) {
+                                                info.needMoveX = 0
+                                                info.needMoveY = 0
+                                                info.orignY = info.posY
+                                                info.orignX = info.posX
+                                            }
+                                        }
+                                    }
+                                }
+                                // 更新所有应用的位置
+                                animFinish.value = false
                             }
                         }
                     }
@@ -571,6 +615,32 @@ suspend fun PointerInputScope.detectLongPress(
                 it.isDrag = false
 //                dragInfoState.value = dragCard
                 dragUpState.value = false
+                coroutineScope.launch {
+                    if (animFinish.value)
+                        delay(200)
+                    // 启动一个动画，将应用从当前位置移动回到原来的位置。
+                    DoTranslateAnim(
+                        AppPos(it.posX, it.posY),
+                        AppPos(it.orignX, it.orignY),
+                        200
+                    )
+                    { appPos, _ ->
+                        it.posX = appPos.x
+                        it.posY = appPos.y
+                        offsetX.value = appPos.x.dp
+                        offsetY.value = appPos.y.dp
+                        if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
+                            "DragManager",
+                            "PointerInputScope----onDragEnd----DoTranslateAnim, ${appPos.x},${appPos.y}, ${it.id},${it.posX},${it.posY}"
+                        )
+                    }
+                    it.needMoveX = 0
+                    it.needMoveY = 0
+                    // 在动画结束后，清除拖动信息。
+                    dragInfoState.value = null
+                    // 在动画结束后，重置偏移量。这可能是为了准备下一次的拖动操作。
+                    offsetX.value = 200.dp
+                }
             }
         },
         onDragCancel = {

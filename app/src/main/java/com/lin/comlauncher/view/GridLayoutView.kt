@@ -47,6 +47,7 @@ fun GridCardListView(
     columns: MutableList<List<GridItemData>>, pagerIndex: Int = 0,
 ) {
     var animFinish = remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
     val coroutineAnimScope = rememberCoroutineScope()
     val dragInfoState = remember { mutableStateOf<GridItemData?>(null) }
     val dragUpState = remember {
@@ -73,6 +74,7 @@ fun GridCardListView(
                 detectLongPress(
                     cardList = groupedColumns,
                     currentSel = currentSelect,
+                    coroutineScope = coroutineScope,
                     coroutineAnimScope = coroutineAnimScope,
                     dragUpState = dragUpState,
                     dragInfoState = dragInfoState,
@@ -230,7 +232,6 @@ fun reSortItems(
     cellSize: Int,
     outPadding: Int = 0,
     items: MutableList<GridItemData>,
-    initCellSize: Boolean = true,
     selectItem: GridItemData? = null,
     replaceItem: GridItemData? = null
 ): MutableList<List<GridItemData>> {
@@ -246,8 +247,30 @@ fun reSortItems(
     var currentColumnItems = mutableListOf<GridItemData>()
     // 所有列
     val columns = mutableListOf<List<GridItemData>>()
+    // 是否重新计算排序
+    val isReSort = selectItem != null && replaceItem != null
+    var replaceIndex = 0
+    // isReSort为ture，列表items中selectItem取出插入到replaceItem前面，记录下标，从replaceItem开始重新排序
+    if (isReSort && selectItem != null && replaceItem != null) {
+        selectItem.needMoveX = replaceItem.posX
+        selectItem.needMoveY = replaceItem.posY
+        val selectIndex = items.indexOf(selectItem)
+        replaceIndex = items.indexOf(replaceItem)
+        if (selectIndex != -1) {
+            items.removeAt(selectIndex)
+            if (replaceIndex <= items.size) {
+                items.add(replaceIndex, selectItem)
+            } else {
+                items.add(selectItem)
+            }
+        }
+    if(LogDebug && LogDebug_reSortItems) Log.d(
+        "GridLayoutView",
+        "reSortItems----replaceIndex:$replaceIndex")
+    }
     // 遍历所有项
     for (i in items.indices) {
+//    for (i in replaceIndex until items.size) {
         if (i > items.size - 1) {
             break
         }
@@ -333,7 +356,7 @@ fun reSortItems(
     if (currentColumnItems.isNotEmpty()) {
         columns.add(currentColumnItems)
     }
-    if (initCellSize) initCellSize(betweenPadding, cellSize, outPadding, columns)
+    initCellSize(betweenPadding, cellSize, outPadding, columns, isReSort = isReSort)
     return columns
 }
 
@@ -343,7 +366,8 @@ private fun initCellSize(
     betweenPadding: Int,
     cellSize: Int,
     outPadding: Int,
-    columns: MutableList<List<GridItemData>>
+    columns: MutableList<List<GridItemData>>,
+    isReSort: Boolean = false
 ) {
     GridCardConfig.DEFAULT_TOP_PADDING = outPadding
     GridCardConfig.HOME_DEFAULT_PADDING_LEFT = GridCardConfig.DEFAULT_TOP_PADDING
@@ -359,9 +383,17 @@ private fun initCellSize(
             var columnItemIndex = 0
             var columnsHeight = 0
             columnItem.forEach {
-                it.posX =
-                    outPadding + betweenPadding * pagerItemIndex + cellCommonWidth * pagerItemIndex
-                it.posY = outPadding + columnsHeight + betweenPadding * columnItemIndex
+                if (isReSort) {
+                    it.needMoveX =
+                        outPadding + betweenPadding * pagerItemIndex + cellCommonWidth * pagerItemIndex
+                    it.needMoveX -= it.posX
+                    it.needMoveY = outPadding + columnsHeight + betweenPadding * columnItemIndex
+                    it.needMoveY -= it.posY
+                } else {
+                    it.posX =
+                        outPadding + betweenPadding * pagerItemIndex + cellCommonWidth * pagerItemIndex
+                    it.posY = outPadding + columnsHeight + betweenPadding * columnItemIndex
+                }
                 it.cellSize = cellSize
                 it.cellCommonWidth = cellCommonWidth
                 it.betweenPadding = betweenPadding
@@ -369,9 +401,11 @@ private fun initCellSize(
                 columnsHeight += it.cellHeight
                 if (LogDebug && LogDebug_initCellSize) Log.d(
                     "GridLayoutView",
-                    "initCellSize----初始化位置----id:${it.id}, posX:${it.posX}, posY:${it.posY}," +
+                    "initCellSize----初始化位置----id:${it.id}, posX:${it.posX}, posY:${it.posY}, " +
+                            "needMoveX:${it.needMoveX}, needMoveY:${it.needMoveY}, " +
+                            "orignX:${it.orignX}, orignY:${it.orignY}" +
                             " 页groupedColumnsIndex:$groupedColumnsIndex, 列pagerItemIndex:$pagerItemIndex, " +
-                            "组columnItemIndex:$columnItemIndex, cellSize:${it.cellSize}, " +
+                            "组columnItemIndex:$columnItemIndex, \ncellSize:${it.cellSize}, " +
                             "cellCommonWidth:${it.cellCommonWidth}, betweenPadding:${it.betweenPadding}, " +
                             "cellHeight:${it.cellHeight}"
                 )
@@ -395,7 +429,11 @@ data class GridItemData(
     var betweenPadding: Int = 0,
     var cellCommonWidth: Int = 0,
     var cellSize: Int = 0,
-    var cellHeight: Int = 0
+    var cellHeight: Int = 0,
+    var orignX: Int = 0,
+    var orignY: Int = 0,
+    var needMoveX: Int = 0,
+    var needMoveY: Int = 0,
 ) {
     fun deepCopy() = GridItemData(
         id = id,
@@ -408,7 +446,11 @@ data class GridItemData(
         betweenPadding = betweenPadding,
         cellCommonWidth = cellCommonWidth,
         cellSize = cellSize,
-        cellHeight = cellHeight
+        cellHeight = cellHeight,
+        orignX = orignX,
+        orignY = orignY,
+        needMoveX = needMoveX,
+        needMoveY = needMoveY,
     )
 }
 

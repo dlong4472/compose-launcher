@@ -427,11 +427,11 @@ suspend fun PointerInputScope.detectLongPress(
     }
 }
 
-const val LogDebug_PointerInputScope_Grid = true
+const val LogDebug_PointerInputScope_Grid = false
 
 @OptIn(ExperimentalPagerApi::class)
 suspend fun PointerInputScope.detectLongPress(
-    cardList: List<List<List<GridItemData>>>,
+    cardList: MutableList<MutableList<MutableList<GridItemData>>>,
     currentSel: MutableState<Int>,
     coroutineScope: CoroutineScope, coroutineAnimScope: CoroutineScope,
     dragInfoState: MutableState<GridItemData?>, animFinish: MutableState<Boolean>,
@@ -537,10 +537,6 @@ suspend fun PointerInputScope.detectLongPress(
                             }
                             // 左右翻页 ------------------------------------- end
 
-//                        if (LogDebug && LogDebug_PointerInputScope) Log.d(
-//                            "DragManager",
-//                            "PointerInputScope----onDragStart----disPlayTime:$disPlayTime"
-//                        )
                             if (disPlayTime == 1) {
                                 if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
                                     "DragManager",
@@ -588,13 +584,10 @@ suspend fun PointerInputScope.detectLongPress(
                                             if (info.id != it.id) {
                                                 info.needMoveX = 0
                                                 info.needMoveY = 0
-                                                info.orignY = info.posY
-                                                info.orignX = info.posX
                                             }
                                         }
                                     }
                                 }
-                                // 更新所有应用的位置
                                 animFinish.value = false
                             }
                         }

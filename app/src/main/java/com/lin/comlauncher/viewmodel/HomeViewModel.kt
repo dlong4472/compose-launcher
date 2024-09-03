@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel : ViewModel() {
     var infoBaseBean = AppInfoBaseBean()
-    var carList = mutableListOf<List<GridItemData>>()
+    var carList = mutableListOf<MutableList<GridItemData>>()
 
     private var currentVersion = 0
 

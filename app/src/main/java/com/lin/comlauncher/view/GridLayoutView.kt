@@ -44,7 +44,7 @@ const val LogDebug_GridCardListView = false
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun GridCardListView(
-    columns: MutableList<List<GridItemData>>, pagerIndex: Int = 0,
+    columns: MutableList<MutableList<GridItemData>>, pagerIndex: Int = 0,
 ) {
     var animFinish = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -57,7 +57,15 @@ fun GridCardListView(
     val offsetY = remember { mutableStateOf(0.dp) }
     val currentSelect = remember { mutableIntStateOf(0) }
 
-    val groupedColumns = columns.chunked(3)
+    val groupedColumnsList = columns.chunked(3)
+    val groupedColumns = mutableListOf<MutableList<MutableList<GridItemData>>>()
+    groupedColumnsList.forEach { listListList ->
+        val list = mutableListOf<GridItemData>()
+        listListList.forEach { list.addAll(it) }
+        val listList = mutableListOf<MutableList<GridItemData>>()
+        listList.add(list)
+        groupedColumns.add(listList)
+    }
     val pagerSize = groupedColumns.size
     val pagerState = rememberPagerState(initialPage = pagerIndex)
     if (LogDebug && LogDebug_GridCardListView) Log.d(
@@ -234,7 +242,7 @@ fun reSortItems(
     items: MutableList<GridItemData>,
     selectItem: GridItemData? = null,
     replaceItem: GridItemData? = null
-): MutableList<List<GridItemData>> {
+): MutableList<MutableList<GridItemData>> {
     if (LogDebug && LogDebug_reSortItems) Log.d(
         "GridLayoutView",
         "reSortItems----viewHeight:$viewHeight, betweenPadding:$betweenPadding, " +
@@ -246,7 +254,7 @@ fun reSortItems(
     // 当前列的所有项
     var currentColumnItems = mutableListOf<GridItemData>()
     // 所有列
-    val columns = mutableListOf<List<GridItemData>>()
+    val columns = mutableListOf<MutableList<GridItemData>>()
     // 是否重新计算排序
     val isReSort = selectItem != null && replaceItem != null
     var replaceIndex = 0
@@ -360,13 +368,13 @@ fun reSortItems(
     return columns
 }
 
-private const val LogDebug_initCellSize = true
+private const val LogDebug_initCellSize = false
 
 private fun initCellSize(
     betweenPadding: Int,
     cellSize: Int,
     outPadding: Int,
-    columns: MutableList<List<GridItemData>>,
+    columns: MutableList<MutableList<GridItemData>>,
     isReSort: Boolean = false
 ) {
     GridCardConfig.DEFAULT_TOP_PADDING = outPadding
@@ -392,7 +400,9 @@ private fun initCellSize(
                 } else {
                     it.posX =
                         outPadding + betweenPadding * pagerItemIndex + cellCommonWidth * pagerItemIndex
+                    it.orignX = it.posX
                     it.posY = outPadding + columnsHeight + betweenPadding * columnItemIndex
+                    it.orignY = it.posY
                 }
                 it.cellSize = cellSize
                 it.cellCommonWidth = cellCommonWidth

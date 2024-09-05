@@ -6,6 +6,7 @@ import com.lin.comlauncher.entity.ApplicationInfo
 import com.lin.comlauncher.view.GridItemData
 import com.lin.comlauncher.view.LogDebug
 import com.lin.comlauncher.view.reSortItems
+import com.lin.comlauncher.view.reSortItemsV2
 
 object SortUtils {
 
@@ -223,33 +224,44 @@ object SortUtils {
      * 重置应用列表和工具列表中的应用位置
      */
     fun resetChoosePosGrid(
-        list: MutableList<MutableList<MutableList<GridItemData>>>,
+        list: MutableList<MutableList<GridItemData>>,
         item: GridItemData,
         itemReplaceId: Int?
-    ) {
+    ): MutableList<MutableList<GridItemData>> {
         if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
             LogDebug_Tag, "resetChoosePosGrid----" +
                     "\n"
         )
         var findReplace: GridItemData? = null
         val itemsInput: MutableList<GridItemData> = mutableListOf()
+        var findColumnList = mutableListOf<GridItemData>()
         list.forEach { listFirst ->
-            listFirst.forEach { listSecond ->
-                listSecond.forEach {
-                    if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
-                        LogDebug_Tag, "resetChoosePosGrid----" +
-                                "重新排序前----items----id:${it.id}, posX:${it.posX}, posY:${it.posY}," +
-                                " orignX:${it.orignX}, orignY:${it.orignY}, " +
-                                "needMoveX:${it.needMoveX}, needMoveY:${it.needMoveY}"
-                    )
-                    if (itemReplaceId != null && itemReplaceId != item.id) {
-                        // 定位替换的item
-                        if (itemReplaceId == it.id) {
-                            findReplace = it
+            listFirst.forEach {
+                if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
+                    LogDebug_Tag, "resetChoosePosGrid----" +
+                            "重新排序前----items----id:${it.id}, posX:${it.posX}, posY:${it.posY}," +
+                            " orignX:${it.orignX}, orignY:${it.orignY}, " +
+                            "needMoveX:${it.needMoveX}, needMoveY:${it.needMoveY}, "
+                )
+                if (itemReplaceId != null && itemReplaceId != item.id) {
+                    // 定位替换的item
+                    if (itemReplaceId == it.id) {
+                        findReplace = it
+                        run {
+                            list[it.pageIndex].forEach { listDetail ->
+                                if (listDetail.id == it.id) {
+                                    findColumnList.add(listDetail)
+                                    return@run
+                                } else {
+                                    if (it.columnsIndex == listDetail.columnsIndex) {
+                                        findColumnList.add(listDetail)
+                                    }
+                                }
+                            }
                         }
-                        // 添加到itemsInput排序的数据
-                        itemsInput.add(it)
                     }
+                    // 添加到itemsInput排序的数据
+                    itemsInput.add(it)
                 }
             }
         }
@@ -258,14 +270,14 @@ object SortUtils {
                 LogDebug_Tag,
                 "resetChoosePosGrid----itemReplaceId为空不处理"
             )
-            return
+            return list
         }
         if (itemReplaceId == item.id) {
             if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
                 LogDebug_Tag,
                 "resetChoosePosGrid----id相同不处理"
             )
-            return
+            return list
         }
         findReplace?.let { itemReplace ->
             if (item.cellHeight > itemReplace.cellHeight &&
@@ -276,7 +288,7 @@ object SortUtils {
                     LogDebug_Tag,
                     "resetChoosePosGrid----位置不合适返回不处理"
                 )
-                return
+                return list
             }
             if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
                 LogDebug_Tag,
@@ -294,28 +306,170 @@ object SortUtils {
                 GridCardConfig.DEFAULT_TOP_PADDING,
                 itemsInput,
                 selectItem = item,
-                replaceItem = itemReplace
+                replaceItem = itemReplace,
+                ignoreReSortList = findColumnList,
             )
-            val groupedColumns = reSortList.chunked(3)
+//            list.clear()
+//            reSortList.forEach { gList ->
+//                list.add(gList.toMutableList())
+//            }
+            list.forEach { list ->
+                list.forEach {
+                    reSortList.forEach { gList ->
+                        gList.forEach { g ->
+                            if (it.id == g.id) {
+                                it.needMoveX = g.needMoveX
+                                it.needMoveY = g.needMoveY
+                            }
+                        }
+                    }
+                    if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
+                        LogDebug_Tag, "resetChoosePosGrid----" +
+                                "重新排序后----items----id:${it.id}, " +
+                                "posX:${it.posX}, posY:${it.posY}, " +
+                                "orignX:${it.orignX}, orignY:${it.orignY}, " +
+                                "needMoveX:${it.needMoveX}, " +
+                                "needMoveY:${it.needMoveY}"
+                    )
+                }
+            }
+            return reSortList
+        }
+        return list
+    }
+
+    private val LogDebug_resetChoosePosRow = true
+
+    /**
+     * 重置应用列表和工具列表中的应用位置
+     */
+    fun resetChoosePosRow(
+        list: MutableList<MutableList<GridItemData>>,
+        item: GridItemData,
+        itemReplaceId: Int?
+    ): MutableList<MutableList<GridItemData>> {
+        if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
+            LogDebug_Tag, "resetChoosePosRow----item:${item.id}, " +
+                    "itemReplaceId:${itemReplaceId}, "
+        )
+        var findReplace: GridItemData? = null
+        val itemsInput: MutableList<GridItemData> = mutableListOf()
+        var ignoreReSortList = mutableListOf<GridItemData>()
+        var findColumnIndex = 0
+        var ignoreReSortColumnIndex = -1
+        list.forEach { listFirst ->
+            listFirst.forEach {
+                if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
+                    LogDebug_Tag, "resetChoosePosGrid----" +
+                            "重新排序前----items----id:${it.id}, posX:${it.posX}, posY:${it.posY}," +
+                            " orignX:${it.orignX}, orignY:${it.orignY}, " +
+                            "needMoveX:${it.needMoveX}, needMoveY:${it.needMoveY}, " +
+                            "findColumnIndex:${findColumnIndex}"
+                )
+                if (itemReplaceId != null && itemReplaceId != item.id) {
+                    // 定位替换的item和替换的列
+                    if (itemReplaceId == it.id) {
+                        findReplace = it
+                        var findColumnListStr = ""
+                        ignoreReSortColumnIndex = findColumnIndex
+                        run {
+                            list[findColumnIndex].forEach { listDetail ->
+                                if (listDetail.id == it.id) {
+                                    ignoreReSortList.add(item)
+                                    findColumnListStr += "${item.id}, "
+                                    return@run
+                                } else {
+                                    ignoreReSortList.add(listDetail)
+                                    findColumnListStr += "${listDetail.id}, "
+                                }
+                            }
+                        }
+                        if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
+                            LogDebug_Tag, "resetChoosePosGrid----" +
+                                    "定位替换的item和替换的列----findReplace:${it.id}, " +
+                                    "findColumnListStr:${findColumnListStr}"
+                        )
+                    }
+                    // 添加到itemsInput排序的数据
+                    itemsInput.add(it)
+                }
+            }
+            findColumnIndex++
+        }
+        if (itemReplaceId == null || findReplace == null) {
+            if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
+                LogDebug_Tag,
+                "resetChoosePosGrid----itemReplaceId为空不处理"
+            )
+            return list
+        }
+        if (itemReplaceId == item.id) {
+            if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
+                LogDebug_Tag,
+                "resetChoosePosGrid----id相同不处理"
+            )
+            return list
+        }
+        findReplace?.let { itemReplace ->
+            if (item.cellHeight > itemReplace.cellHeight &&
+                itemReplace.posY + item.cellHeight >
+                GridCardConfig.HOME_HEIGHT - GridCardConfig.DEFAULT_TOP_PADDING
+            ) {
+                if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
+                    LogDebug_Tag,
+                    "resetChoosePosGrid----位置不合适返回不处理"
+                )
+                return list
+            }
+            if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
+                LogDebug_Tag,
+                "resetChoosePosGrid----${GridCardConfig.HOME_HEIGHT - GridCardConfig.DEFAULT_TOP_PADDING}, " +
+                        "${item.posX}, ${item.posY}, ${item.cellHeight}, " +
+                        "${itemReplace.posX}, ${itemReplace.posY}, ${itemReplace.cellHeight}, "
+            )
+            item.orignX = itemReplace.posX
+            item.orignY = itemReplace.posY
+            val reSortList = reSortItemsV2(
+                GridCardConfig.HOME_HEIGHT,
+                item.betweenPadding,
+                GridCardConfig.DEFAULT_TOP_PADDING * 2,
+                item.cellSize,
+                GridCardConfig.DEFAULT_TOP_PADDING,
+                itemsInput,
+                selectItem = item,
+                replaceItem = itemReplace,
+                ignoreReSortList = ignoreReSortList,
+                ignoreReSortColumnIndex = ignoreReSortColumnIndex
+            )
             list.clear()
-            groupedColumns.forEach { gList ->
+            reSortList.forEach { gList ->
                 list.add(gList.toMutableList())
             }
             list.forEach { list ->
-                list.forEach { listSecond ->
-                    listSecond.forEach {
-                        if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
-                            LogDebug_Tag, "resetChoosePosGrid----" +
-                                    "重新排序后----items----id:${it.id}, " +
-                                    "posX:${it.posX}, posY:${it.posY}, " +
-                                    "orignX:${it.orignX}, orignX:${it.orignX}, " +
-                                    "needMoveX:${it.needMoveX}, " +
-                                    "needMoveY:${it.needMoveY}"
-                        )
+                list.forEach {
+                    reSortList.forEach { gList ->
+                        gList.forEach { g ->
+                            if (it.id == g.id) {
+                                it.posX += g.needMoveX
+                                it.needMoveX = 0
+                                it.posY += g.needMoveY
+                                it.needMoveY = 0
+                            }
+                        }
                     }
+                    if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
+                        LogDebug_Tag, "resetChoosePosGrid----" +
+                                "重新排序后----items----id:${it.id}, " +
+                                "posX:${it.posX}, posY:${it.posY}, " +
+                                "orignX:${it.orignX}, orignY:${it.orignY}, " +
+                                "needMoveX:${it.needMoveX}, " +
+                                "needMoveY:${it.needMoveY}"
+                    )
                 }
             }
+            return reSortList
         }
+        return list
     }
 
     fun findCurrentCellByPos(posX: Int, posY: Int): Int {
@@ -346,7 +500,7 @@ object SortUtils {
 
     private val LogDebug_SortUtils = false
 
-    fun findCurrentCellByPosGrid(posX: Int, posY: Int, list: List<List<GridItemData>>): Int {
+    fun findCurrentCellByPosGrid(posX: Int, posY: Int, list: List<List<GridItemData>>, ignoreId: Int = -1): Int {
         if (LogDebug && LogDebug_SortUtils) Log.d(
             LogDebug_Tag,
             "findCurrentCellByPosGrid----posX:$posX, posY:$posY"
@@ -364,7 +518,35 @@ object SortUtils {
 //            return -pos - 100
 //        }
 
-        val dragCard: GridItemData? = findCurrentActorPixDp(list, posX, posY)
+        val dragCard: GridItemData? = findCurrentActorPixDp(list, posX, posY, ignoreId = ignoreId)
+
+        if (LogDebug && LogDebug_SortUtils) Log.d(
+            LogDebug_Tag,
+            "findCurrentCellByPosGrid----dragCard:${dragCard?.id}"
+        )
+
+        return dragCard?.id ?: -1000
+    }
+
+    fun findCurrentCellByPosRow(posX: Int, posY: Int, list: List<List<GridItemData>>, ignoreId: Int = -1): Int {
+        if (LogDebug && LogDebug_SortUtils) Log.d(
+            LogDebug_Tag,
+            "findCurrentCellByPosGrid----posX:$posX, posY:$posY"
+        )
+        if (posY < GridCardConfig.DEFAULT_TOP_PADDING) {
+            return -1
+        }
+//        if (posX <= GridCardConfig.HOME_DEFAULT_PADDING_LEFT)
+//            return GridCardConfig.CELL_POS_HOME_LEFT
+//        if (posX >= GridCardConfig.HOME_WIDTH - GridCardConfig.HOME_DEFAULT_PADDING_LEFT)
+//            return GridCardConfig.CELL_POS_HOME_RIGHT
+
+//        if (posY >= GridCardConfig.HOME_TOOLBAR_START) {
+//            val pos = (posX + GridCardConfig.HOME_CELL_WIDTH / 2) / GridCardConfig.HOME_CELL_WIDTH
+//            return -pos - 100
+//        }
+
+        val dragCard: GridItemData? = findCurrentActorPixDp(list, posX, posY, ignoreId = ignoreId)
 
         if (LogDebug && LogDebug_SortUtils) Log.d(
             LogDebug_Tag,
@@ -426,7 +608,7 @@ object SortUtils {
 
     private val LogDebug_findCurrentActorPixDp = false
 
-    fun findCurrentActorPixDp(list: List<List<GridItemData>>, pixX: Int, pixY: Int): GridItemData? {
+    fun findCurrentActorPixDp(list: List<List<GridItemData>>, pixX: Int, pixY: Int, ignoreId: Int = -1): GridItemData? {
         /**
          * (posX，posY) ----------
          *             |          |
@@ -437,12 +619,15 @@ object SortUtils {
         var g: GridItemData? = null
         run {
             list.forEach { l ->
-                l.forEach {
+                l.forEach continuing@{
                     if (BuildConfig.DEBUG && LogDebug_findCurrentActorPixDp) Log.d(
                         "findCurrentActorPix",
                         "it:${it.id} list:${list.size} pixX=$pixX pixY=$pixY it=${it.posX} " +
                                 ",${it.posY} width=${it.cellCommonWidth}, height=${it.cellHeight}"
                     )
+                    if (ignoreId != -1 && ignoreId == it.id) {
+                        return@continuing
+                    }
                     if (pixX >= it.posX && pixX < it.posX + it.cellCommonWidth &&
                         pixY >= it.posY && pixY < it.posY + it.cellHeight
                     ) {

@@ -19,6 +19,9 @@
       <SelectionState runConfigName="demo.compose-launcher.ComposeLauncher.app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+      <SelectionState runConfigName="workspace.demo.compose-launcher.ComposeLauncher.app">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
     </selectionStates>
   </component>
 </project>

@@ -2,9 +2,11 @@ package com.lin.comlauncher.view
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.MutableState
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -431,7 +433,7 @@ const val LogDebug_PointerInputScope_Grid = false
 
 @OptIn(ExperimentalPagerApi::class)
 suspend fun PointerInputScope.detectLongPress(
-    cardList: MutableList<MutableList<MutableList<GridItemData>>>,
+    cardList: MutableList<MutableList<GridItemData>>,
     currentSel: MutableState<Int>,
     coroutineScope: CoroutineScope, coroutineAnimScope: CoroutineScope,
     dragInfoState: MutableState<GridItemData?>, animFinish: MutableState<Boolean>,
@@ -446,7 +448,10 @@ suspend fun PointerInputScope.detectLongPress(
                 "PointerInputScope----onDragStart"
             )
             val initCurrentSel = currentSel.value
-            val list = cardList[initCurrentSel]
+            val list = cardList.subList(
+                initCurrentSel * 3,
+                (initCurrentSel + 1) * 3
+            )
             val dragCard: GridItemData =
                 SortUtils.findCurrentActorPix(list, off.x.toInt(), off.y.toInt())
                     ?: return@detectDragGesturesAfterLongPress
@@ -458,13 +463,11 @@ suspend fun PointerInputScope.detectLongPress(
             dragInfoState.value = dragCard
             dragUpState.value = true
             val it = dragCard
-            val listCopy: MutableList<List<GridItemData>> = mutableListOf()
+            val listCopy: MutableList<MutableList<GridItemData>> = mutableListOf()
             cardList.forEach {
                 val list = mutableListOf<GridItemData>()
-                it.forEach { iList ->
-                    iList.forEach { iDetail ->
-                        list.add(iDetail.deepCopy())
-                    }
+                it.forEach { iDetail ->
+                    list.add(iDetail.deepCopy())
                 }
                 listCopy.add(list)
             }
@@ -492,7 +495,10 @@ suspend fun PointerInputScope.detectLongPress(
                         val currentSelNow = currentSel.value
                         // 如果当前选中的页面发生了变化，那么就更新 cardListSearch
                         val cardListSearch =
-                            if (initCurrentSel == currentSelNow) listCopy else cardList[currentSelNow]
+                            if (initCurrentSel == currentSelNow) listCopy else cardList.subList(
+                                currentSelNow * 3,
+                                (currentSelNow + 1) * 3
+                            )
                         // 被拖动经过的单元格
                         val cellIndex =
                             SortUtils.findCurrentCellByPosGrid(
@@ -543,7 +549,7 @@ suspend fun PointerInputScope.detectLongPress(
                                     "PointerInputScope----onDragStart----currentSel.value:${currentSel.value}, it:${it.id}, cellIndex:$cellIndex"
                                 )
                                 // 重新排序
-                                SortUtils.resetChoosePosGrid(
+                                val sortList = SortUtils.resetChoosePosGrid(
                                     cardList,
                                     it, cellIndex
                                 )
@@ -556,35 +562,36 @@ suspend fun PointerInputScope.detectLongPress(
                                     300
                                 ) { appPos, _ ->
                                     cardList.forEach { lFirst ->
-                                        lFirst.forEach { lSecond ->
-                                            lSecond.forEach { info ->
-                                                if (info.id == it.id || (info.needMoveX == 0 && info.needMoveY == 0)) {
-                                                } else {
-                                                    info.posX =
-                                                        info.orignX + (info.needMoveX - (xScale - appPos.x) * info.needMoveX / xScale)
-                                                    info.posY =
-                                                        info.orignY + (info.needMoveY - (yScale - appPos.y) * info.needMoveY / yScale)
+                                        lFirst.forEach { info ->
+                                            if (info.id == it.id || (info.needMoveX == 0 && info.needMoveY == 0)) {
+                                            } else {
+                                                info.posX =
+                                                    info.orignX + (info.needMoveX - (xScale - appPos.x) * info.needMoveX / xScale)
+                                                info.posY =
+                                                    info.orignY + (info.needMoveY - (yScale - appPos.y) * info.needMoveY / yScale)
 
-                                                    if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
-                                                        "DragManager",
-                                                        "PointerInputScope----onDragStart----DoTranslateAnim, ${appPos.x},${appPos.y}, ${info.id},${info.needMoveX},${info.needMoveY},,${info.posX},${info.posY}," +
-                                                                "${(xScale - appPos.x) * info.needMoveX / xScale},${(yScale - appPos.y) * info.needMoveY / yScale}"
-                                                    )
-                                                }
+                                                if (LogDebug && LogDebug_PointerInputScope_Grid) Log.d(
+                                                    "DragManager",
+                                                    "PointerInputScope----onDragStart----DoTranslateAnim, ${appPos.x},${appPos.y}, ${info.id},${info.needMoveX},${info.needMoveY},,${info.posX},${info.posY}," +
+                                                            "${(xScale - appPos.x) * info.needMoveX / xScale},${(yScale - appPos.y) * info.needMoveY / yScale}"
+                                                )
                                             }
                                         }
                                     }
                                     offsetX.value = appPos.x.dp
                                     offsetY.value = appPos.y.dp
                                 }
+                                // 重新排序
+                                cardList.clear()
+                                sortList.forEach {
+                                    cardList.add(it)
+                                }
                                 // 更新所有应用的位置
                                 cardList.forEach { lFirst ->
-                                    lFirst.forEach { lSecond ->
-                                        lSecond.forEach { info ->
-                                            if (info.id != it.id) {
-                                                info.needMoveX = 0
-                                                info.needMoveY = 0
-                                            }
+                                    lFirst.forEach { info ->
+                                        if (info.id != it.id) {
+                                            info.needMoveX = 0
+                                            info.needMoveY = 0
                                         }
                                     }
                                 }
@@ -648,6 +655,131 @@ suspend fun PointerInputScope.detectLongPress(
             // 更新被拖动的应用的浮点位置（posFx 和 posFy）
             it.posFx += dragAmount.x
             it.posFy += dragAmount.y
+            // dragAmount.x 和 dragAmount.y 是指针位置的变化量，它们被加到当前的位置上，从而更新应用的位置
+//                                        LogUtils.e("offx=${ it.posFx.toDp()} offy=${it.posFy.toDp()}")
+            // 将浮点位置转换为整数位置（posX 和 posY）。这是因为在Android中，位置通常以像素为单位，而像素必须是整数
+            it.posX = it.posFx.toDp().value.toInt()
+            it.posY = it.posFy.toDp().value.toInt()
+
+//            if (LogDebug && LogDebug_PointerInputScope) Log.d(
+//                "DragManager",
+//                "PointerInputScope----consume, dragAmount.x=${dragAmount.x}, " +
+//                        "dragAmount.y=${dragAmount.y}, it.posX=${it.posX}, it.posY=${it.posY}"
+//            )
+//            LogUtils.e("drag cellX = ${it.posX}  cellY=${it.posY}")
+            // 更新偏移量（offsetX 和 offsetY）。偏移量是指应用的当前位置与其原始位置的差值。
+            offsetX.value = dragAmount.x.toDp() + offsetX.value
+            offsetY.value = dragAmount.y.toDp() + offsetY.value
+            // 检查应用是否被拖动了一定的距离（APP_INFO_DRAG_DIS）。如果是，那么就清除应用管理器的状态（appManagerState）。
+//            if (abs(it.posX - it.orignX) > LauncherConfig.APP_INFO_DRAG_DIS || abs(it.posY - it.orignY) > LauncherConfig.APP_INFO_DRAG_DIS) {
+//                // 拖动了足够的距离，所以不再需要应用管理器的状态。
+//                appManagerState.value = null
+//            }
+        }
+    }
+}
+
+const val LogDebug_PointerInputScope_Row = false
+
+suspend fun PointerInputScope.detectLongPressRow(
+    cardList: MutableList<MutableList<GridItemData>>,
+    coroutineScope: CoroutineScope, coroutineAnimScope: CoroutineScope,
+    dragInfoState: MutableState<GridItemData?>, animFinish: MutableState<Boolean>,
+    dragUpState: MutableState<Boolean>,
+    offsetX: MutableState<Dp>, offsetY: MutableState<Dp>,
+    scrollState: ScrollState
+) {
+    var offSetX: Float = 0f
+    var offSetY: Float = 0f
+    detectDragGesturesAfterLongPress(
+        onDragStart = { off ->
+            offSetX = off.x
+            offSetY = off.y
+            if (LogDebug && LogDebug_PointerInputScope_Row) Log.d(
+                "DragManager",
+                "PointerInputScope----onDragStart"
+            )
+            val dragCard: GridItemData =
+                SortUtils.findCurrentActorPix(cardList, off.x.toInt(), off.y.toInt())
+                    ?: return@detectDragGesturesAfterLongPress
+            dragCard.also { card -> // 如果找到了被拖动的应用，那么就执行大括号中的代码。
+                card.posFx = card.posX.dp.toPx()
+                card.posFy = card.posY.dp.toPx()
+            }
+            dragCard.isDrag = true
+            dragInfoState.value = dragCard
+            dragUpState.value = true
+        },
+        onDragEnd = {
+            if (LogDebug && LogDebug_PointerInputScope_Row) Log.d(
+                "DragManager",
+                "PointerInputScope----onDragEnd"
+            )
+            dragInfoState.value?.let {
+                it.isDrag = false
+//                dragInfoState.value = dragCard
+                dragUpState.value = false
+                coroutineScope.launch {
+                    val selectCellId =
+                        SortUtils.findCurrentCellByPosRow(
+                            DisplayUtils.pxToDp(offSetX.toInt()),
+                            DisplayUtils.pxToDp(offSetY.toInt()),
+                            cardList,
+                            it.id
+                        )
+                    if (LogDebug && LogDebug_PointerInputScope_Row) Log.d(
+                        "DragManager",
+                        "PointerInputScope----onDragEnd----DoTranslateAnim, selectCellId:$selectCellId"
+                    )
+
+                    if (animFinish.value)
+                        delay(200)
+                    // 启动一个动画，将应用从当前位置移动回到原来的位置。
+                    DoTranslateAnim(
+                        AppPos(it.posX, it.posY),
+                        AppPos(it.orignX, it.orignY),
+                        200
+                    )
+                    { appPos, _ ->
+                        it.posX = appPos.x
+                        it.posY = appPos.y
+                        offsetX.value = appPos.x.dp
+                        offsetY.value = appPos.y.dp
+                        if (LogDebug && LogDebug_PointerInputScope_Row) Log.d(
+                            "DragManager",
+                            "PointerInputScope----onDragEnd----DoTranslateAnim, ${appPos.x},${appPos.y}, ${it.id},${it.posX},${it.posY}"
+                        )
+                    }
+                    it.needMoveX = 0
+                    it.needMoveY = 0
+                    // 在动画结束后，清除拖动信息。
+                    dragInfoState.value = null
+                    // 在动画结束后，重置偏移量。这可能是为了准备下一次的拖动操作。
+                    offsetX.value = 200.dp
+
+                    if (selectCellId != it.id) {
+                        SortUtils.resetChoosePosRow(
+                            cardList,
+                            it, selectCellId
+                        )
+                    }
+                }
+            }
+        },
+        onDragCancel = {
+            if (LogDebug && LogDebug_PointerInputScope_Row) Log.d(
+                "DragManager",
+                "PointerInputScope----onDragCancel"
+            )
+        }
+    ) { change, dragAmount ->
+        change.consume()
+        dragInfoState.value?.let {
+            // 更新被拖动的应用的浮点位置（posFx 和 posFy）
+            it.posFx += dragAmount.x
+            it.posFy += dragAmount.y
+            offSetX += dragAmount.x
+            offSetY += dragAmount.y
             // dragAmount.x 和 dragAmount.y 是指针位置的变化量，它们被加到当前的位置上，从而更新应用的位置
 //                                        LogUtils.e("offx=${ it.posFx.toDp()} offy=${it.posFy.toDp()}")
             // 将浮点位置转换为整数位置（posX 和 posY）。这是因为在Android中，位置通常以像素为单位，而像素必须是整数

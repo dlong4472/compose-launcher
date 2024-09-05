@@ -23,6 +23,7 @@ import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
 import com.lin.comlauncher.view.GridItemData
 import com.lin.comlauncher.view.LogDebug
+import com.lin.comlauncher.view.initItems
 import com.lin.comlauncher.view.reSortItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -201,7 +202,7 @@ class HomeViewModel : ViewModel() {
         val topBottomPadding = 20.dp.value.toInt() * 2
         if(LogDebug)Log.d("loadCardList", "betweenPadding:$betweenPadding, pxToDp:${DisplayUtils.pxToDp(10)}")
         val cellSize = (screenHeightDp - topBottomPadding - betweenPadding * 3) / 4
-        carList = reSortItems(
+        carList = initItems(
             screenHeightDp,
             betweenPadding,
             topBottomPadding,

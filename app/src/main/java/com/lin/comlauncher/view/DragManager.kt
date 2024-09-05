@@ -752,12 +752,10 @@ suspend fun PointerInputScope.detectLongPressRow(
                     }
                     it.needMoveX = 0
                     it.needMoveY = 0
-                    // 在动画结束后，清除拖动信息。
                     dragInfoState.value = null
-                    // 在动画结束后，重置偏移量。这可能是为了准备下一次的拖动操作。
                     offsetX.value = 200.dp
 
-                    if (selectCellId != it.id) {
+                    if (selectCellId != it.id && selectCellId > 0) {
                         SortUtils.resetChoosePosRow(
                             cardList,
                             it, selectCellId

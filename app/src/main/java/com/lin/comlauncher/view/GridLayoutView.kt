@@ -611,7 +611,7 @@ fun reSortItemsV2(
         Log.d(
             LogDebug_Tag,
             "reSortItemsV2----ignoreReSortColumnIndex:$ignoreReSortColumnIndex, " +
-                    "ignoreReSortListStr:$ignoreReSortListStr, itemsStr:$itemsStr"
+                    "ignoreReSortListStr:$ignoreReSortListStr itemsStr:$itemsStr"
         )
     }
     ignoreReSortList.forEach { ignoreReSortListBean ->

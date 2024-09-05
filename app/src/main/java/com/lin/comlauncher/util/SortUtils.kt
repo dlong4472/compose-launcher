@@ -373,17 +373,22 @@ object SortUtils {
                         var findColumnListStr = ""
                         ignoreReSortColumnIndex = findColumnIndex
                         run {
+                            var columnIndex = 0
                             list[findColumnIndex].forEach { listDetail ->
                                 if (listDetail.id == it.id) {
-                                    ignoreReSortList.add(item)
+                                    if (!ignoreReSortList.contains(item)) ignoreReSortList.add(item)
                                     findColumnListStr += "${item.id}, "
                                     return@run
                                 } else {
-                                    ignoreReSortList.add(listDetail)
-                                    findColumnListStr += "${listDetail.id}, "
+                                    if (listDetail.id != item.id) {
+                                        ignoreReSortList.add(listDetail)
+                                        findColumnListStr += "${listDetail.id}, "
+                                    }
                                 }
+                                columnIndex++
                             }
                         }
+                        // findColumnListStr去除相同id的元素
                         if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
                             LogDebug_Tag, "resetChoosePosGrid----" +
                                     "定位替换的item和替换的列----findReplace:${it.id}, " +
@@ -500,7 +505,12 @@ object SortUtils {
 
     private val LogDebug_SortUtils = false
 
-    fun findCurrentCellByPosGrid(posX: Int, posY: Int, list: List<List<GridItemData>>, ignoreId: Int = -1): Int {
+    fun findCurrentCellByPosGrid(
+        posX: Int,
+        posY: Int,
+        list: List<List<GridItemData>>,
+        ignoreId: Int = -1
+    ): Int {
         if (LogDebug && LogDebug_SortUtils) Log.d(
             LogDebug_Tag,
             "findCurrentCellByPosGrid----posX:$posX, posY:$posY"
@@ -528,7 +538,12 @@ object SortUtils {
         return dragCard?.id ?: -1000
     }
 
-    fun findCurrentCellByPosRow(posX: Int, posY: Int, list: List<List<GridItemData>>, ignoreId: Int = -1): Int {
+    fun findCurrentCellByPosRow(
+        posX: Int,
+        posY: Int,
+        list: List<List<GridItemData>>,
+        ignoreId: Int = -1
+    ): Int {
         if (LogDebug && LogDebug_SortUtils) Log.d(
             LogDebug_Tag,
             "findCurrentCellByPosGrid----posX:$posX, posY:$posY"
@@ -608,7 +623,12 @@ object SortUtils {
 
     private val LogDebug_findCurrentActorPixDp = false
 
-    fun findCurrentActorPixDp(list: List<List<GridItemData>>, pixX: Int, pixY: Int, ignoreId: Int = -1): GridItemData? {
+    fun findCurrentActorPixDp(
+        list: List<List<GridItemData>>,
+        pixX: Int,
+        pixY: Int,
+        ignoreId: Int = -1
+    ): GridItemData? {
         /**
          * (posX，posY) ----------
          *             |          |

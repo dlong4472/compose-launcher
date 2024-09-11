@@ -6,6 +6,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -53,65 +55,66 @@ fun GridCardListView(
     val offsetX = remember { mutableStateOf(0.dp) }
     val offsetY = remember { mutableStateOf(0.dp) }
     val scrollState = rememberScrollState()
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(scrollState)
-            .pointerInput(0) {
-                detectLongPressRow(
-                    cardList = columns,
-                    coroutineScope = coroutineScope,
-                    coroutineAnimScope = coroutineAnimScope,
-                    dragUpState = dragUpState,
-                    dragInfoState = dragInfoState,
-                    animFinish = animFinish,
-                    offsetX = offsetX,
-                    offsetY = offsetY,
-                    scrollState = scrollState
-                )
-            }
-    ) {
-        Box(
+    Box {
+        Row(
             modifier = Modifier
-                .size(GridCardConfig.DEFAULT_TOP_PADDING.dp)
-        )
-        GridListAll(columns = columns)
-    }
+                .fillMaxWidth()
+                .horizontalScroll(scrollState)
+                .pointerInput(0) {
+                    detectLongPressRow(
+                        cardList = columns,
+                        coroutineScope = coroutineScope,
+                        coroutineAnimScope = coroutineAnimScope,
+                        dragUpState = dragUpState,
+                        dragInfoState = dragInfoState,
+                        animFinish = animFinish,
+                        offsetX = offsetX,
+                        offsetY = offsetY,
+                        scrollState = scrollState
+                    )
+                }
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(GridCardConfig.DEFAULT_TOP_PADDING.dp)
+            )
+            GridListAll(columns = columns)
+        }
 
-    if (dragUpState.value) {
-        if (LogDebug && LogDebug_GridCardListView) Log.d(
-            LogDebug_Tag, "GridCardListView----dragUpState.value：${dragUpState.value}, " +
-                    "Current scroll distance: ${scrollState.value}"
-        )
-        dragInfoState.value?.let {
+        if (dragUpState.value) {
+            if (LogDebug && LogDebug_GridCardListView) Log.d(
+                LogDebug_Tag, "GridCardListView----dragUpState.value：${dragUpState.value}, " +
+                        "Current scroll distance: ${scrollState.value}"
+            )
+            dragInfoState.value?.let {
+                if (LogDebug && LogDebug_GridCardListView) Log.d(
+                    LogDebug_Tag,
+                    "GridCardListView----dragInfoState.value：${it.id}, " + "posX:${it.posX}, posY:${it.posY}, posFx:${it.posFx}, posFy:${it.posFy}"
+                )
+                val posX = it.posX - DisplayUtils.pxToDp(scrollState.value)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .background(Color.Gray.copy(alpha = if (LogDebug_GridCardListView) 0.5f else 0f))
+                        .offset(0.dp, 0.dp)
+                ) {
+                    CardView(
+                        it, offsetX = posX, initPos = false, isAlpha = false, reMove = true
+                    )
+                }
+
+            }
+        }
+
+        if (offsetX.value != 0.dp || offsetY.value != 0.dp) {
             if (LogDebug && LogDebug_GridCardListView) Log.d(
                 LogDebug_Tag,
-                "GridCardListView----dragInfoState.value：${it.id}, " + "posX:${it.posX}, posY:${it.posY}, posFx:${it.posFx}, posFy:${it.posFy}"
+                "GridCardListView----offsetX:${offsetX.value}, offsetY:${offsetY.value}"
             )
-            val width = LocalConfiguration.current.screenWidthDp
-            val height = LocalConfiguration.current.screenHeightDp
-            val posX = it.posX - DisplayUtils.pxToDp(scrollState.value)
-            val posY = it.posY
-            Box(
-                Modifier
-                    .width(width = width.dp)
-                    .height(height = height.dp)
-                    .alpha(0.5f)
-                    .offset(0.dp, 0.dp)
-            ) {
-                CardView(
-                    it, offsetX = posX, initPos = false, isAlpha = false, reMove = true
-                )
-            }
-
         }
     }
 
-    if (offsetX.value != 0.dp || offsetY.value != 0.dp) {
-        if (LogDebug && LogDebug_GridCardListView) Log.d(
-            LogDebug_Tag, "GridCardListView----offsetX:${offsetX.value}, offsetY:${offsetY.value}"
-        )
-    }
 }
 
 @Composable
@@ -138,18 +141,16 @@ fun GridList(
 fun GridListAll(
     columns: MutableList<MutableList<CardItemData>>,
 ) {
-    val height = LocalConfiguration.current.screenHeightDp
     var columnsIndex = 0
     columns.forEach { rowList ->
         if (columnsIndex != 0) {
             Box(
                 modifier = Modifier
-                    .size((GridCardConfig.DEFAULT_TOP_PADDING / 2).dp)
+                    .size(rowList[0].betweenPadding.dp)
             )
         }
         Column(
-            Modifier
-                .height(height = height.dp)
+            Modifier.fillMaxHeight()
         ) {
             var rowIndex = 0
             rowList.forEach { item ->
@@ -232,9 +233,12 @@ fun GridCardListViewPreview(@PreviewParameter(GridItemDataProvider::class) list:
         outPadding = topBottomPadding / 2,
         list
     )
-    GridCardListView(
-        carList,
-    )
+    Row {
+        Spacer(modifier = Modifier.width(50.dp))
+        GridCardListView(
+            carList,
+        )
+    }
 }
 
 private const val LogDebug_initItems = false

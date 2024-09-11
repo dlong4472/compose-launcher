@@ -12,9 +12,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Surface
@@ -24,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import com.gyf.immersionbar.ImmersionBar
 import com.lin.comlauncher.ui.theme.ComposeLauncherTheme
 import com.lin.comlauncher.util.DisplayUtils
@@ -150,7 +154,10 @@ fun CreateView(homeViewModel: HomeViewModel) {
                 InitView()
             } else {
 //                DesktopView(lists = appList)
-                GridCardListView(cardList)
+                Row {
+                    Spacer(modifier = Modifier.width(50.dp))
+                    GridCardListView(cardList)
+                }
             }
         })
 

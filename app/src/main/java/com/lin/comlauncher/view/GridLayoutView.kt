@@ -41,12 +41,12 @@ private const val LogDebug_Tag = "GridLayoutView"
 
 @Composable
 fun GridCardListView(
-    columns: MutableList<MutableList<GridItemData>>,
+    columns: MutableList<MutableList<CardItemData>>,
 ) {
     val animFinish = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val coroutineAnimScope = rememberCoroutineScope()
-    val dragInfoState = remember { mutableStateOf<GridItemData?>(null) }
+    val dragInfoState = remember { mutableStateOf<CardItemData?>(null) }
     val dragUpState = remember {
         mutableStateOf(false)
     }
@@ -116,7 +116,7 @@ fun GridCardListView(
 
 @Composable
 fun GridList(
-    columns: List<List<GridItemData>>,
+    columns: List<List<CardItemData>>,
 ) {
     val width = LocalConfiguration.current.screenWidthDp
     val height = LocalConfiguration.current.screenHeightDp
@@ -136,7 +136,7 @@ fun GridList(
 
 @Composable
 fun GridListAll(
-    columns: MutableList<MutableList<GridItemData>>,
+    columns: MutableList<MutableList<CardItemData>>,
 ) {
     val height = LocalConfiguration.current.screenHeightDp
     var columnsIndex = 0
@@ -176,7 +176,7 @@ private const val LogDebug_CardView = false
 
 @Composable
 fun CardView(
-    i: GridItemData,
+    i: CardItemData,
     offsetX: Int = i.posX,
     offsetY: Int = i.posY,
     isAlpha: Boolean = true,
@@ -217,7 +217,7 @@ fun CardView(
 
 @Preview(widthDp = 1280 * 2, heightDp = 720)
 @Composable
-fun GridCardListViewPreview(@PreviewParameter(GridItemDataProvider::class) list: MutableList<GridItemData>) {
+fun GridCardListViewPreview(@PreviewParameter(GridItemDataProvider::class) list: MutableList<CardItemData>) {
     val viewHeight = 720.dp.value.toInt()
     val betweenPaddingDp = 10.dp
     val betweenPadding = betweenPaddingDp.value.toInt()
@@ -246,9 +246,9 @@ fun initItems(
     topBottomPadding: Int,
     cellSize: Int,
     outPadding: Int = 0,
-    items: MutableList<GridItemData>,
+    items: MutableList<CardItemData>,
     startInitIndex: Int = 0,
-): MutableList<MutableList<GridItemData>> {
+): MutableList<MutableList<CardItemData>> {
     if (LogDebug && LogDebug_initItems) Log.d(
         LogDebug_Tag,
         "reSortItems----viewHeight:$viewHeight, betweenPadding:$betweenPadding, " +
@@ -259,9 +259,9 @@ fun initItems(
     // 计算每一列的高度
     var currentColumnHeight = 0
     // 当前列的所有项
-    var currentColumnItems = mutableListOf<GridItemData>()
+    var currentColumnItems = mutableListOf<CardItemData>()
     // 所有列
-    val columns = mutableListOf<MutableList<GridItemData>>()
+    val columns = mutableListOf<MutableList<CardItemData>>()
     // 遍历所有项
     var currentColumnIndex = 0
     for (i in startInitIndex until items.size) {
@@ -363,12 +363,12 @@ fun reSortItems(
     topBottomPadding: Int,
     cellSize: Int,
     outPadding: Int = 0,
-    items: MutableList<GridItemData>,
-    selectItem: GridItemData? = null,
-    replaceItem: GridItemData? = null,
-    ignoreReSortList: MutableList<GridItemData>? = null,
+    items: MutableList<CardItemData>,
+    selectItem: CardItemData? = null,
+    replaceItem: CardItemData? = null,
+    ignoreReSortList: MutableList<CardItemData>? = null,
     ignoreReSortColumnIndex: Int = -1,
-): MutableList<MutableList<GridItemData>> {
+): MutableList<MutableList<CardItemData>> {
     var ignoreReSortListStr = ""
     ignoreReSortList?.forEach {
         ignoreReSortListStr += "${it.id},"
@@ -384,9 +384,9 @@ fun reSortItems(
     // 计算每一列的高度
     var currentColumnHeight = 0
     // 当前列的所有项
-    var currentColumnItems = mutableListOf<GridItemData>()
+    var currentColumnItems = mutableListOf<CardItemData>()
     // 所有列
-    val columns = mutableListOf<MutableList<GridItemData>>()
+    val columns = mutableListOf<MutableList<CardItemData>>()
     // 是否重新计算排序
     var isReSort = false
     val replaceIndex: Int
@@ -430,7 +430,7 @@ fun reSortItems(
                     LogDebug_Tag,
                     "reSortItems----items.indices----忽略重新排序"
                 )
-                var lastItem: GridItemData? = null
+                var lastItem: CardItemData? = null
                 if (currentColumnItems.isNotEmpty()) {
                     lastItem = currentColumnItems.last()
                 }
@@ -593,12 +593,12 @@ fun reSortItemsV2(
     topBottomPadding: Int,
     cellSize: Int,
     outPadding: Int = 0,
-    items: MutableList<GridItemData>,
-    selectItem: GridItemData? = null,
-    replaceItem: GridItemData? = null,
-    ignoreReSortList: MutableList<GridItemData>,
+    items: MutableList<CardItemData>,
+    selectItem: CardItemData? = null,
+    replaceItem: CardItemData? = null,
+    ignoreReSortList: MutableList<CardItemData>,
     ignoreReSortColumnIndex: Int,
-): MutableList<MutableList<GridItemData>> {
+): MutableList<MutableList<CardItemData>> {
     if (LogDebug && LogDebug_reSortItemsV2) {
         var ignoreReSortListStr = ""
         var itemsStr = ""
@@ -650,7 +650,7 @@ fun reSortItemsV2(
             "reSortItemsV2----重新排序----initListStr:$initListStr"
         )
     }
-    val ignoreReSortFrontList = mutableListOf<MutableList<GridItemData>>()
+    val ignoreReSortFrontList = mutableListOf<MutableList<CardItemData>>()
     var initListIndex = 0
     run {
         initList.forEach {
@@ -698,7 +698,7 @@ fun reSortItemsV2(
         initCellSize(betweenPadding, cellSize, outPadding, initList)
         return initList
     }
-    val initListNew = mutableListOf<GridItemData>()
+    val initListNew = mutableListOf<CardItemData>()
     initList.forEach {
         initListNew.addAll(it)
     }
@@ -760,7 +760,7 @@ private fun initCellSize(
     betweenPadding: Int,
     cellSize: Int,
     outPadding: Int,
-    columns: MutableList<MutableList<GridItemData>>,
+    columns: MutableList<MutableList<CardItemData>>,
     isReSort: Boolean = false
 ) {
     GridCardConfig.DEFAULT_TOP_PADDING = outPadding
@@ -808,7 +808,7 @@ private fun initCellSize(
 }
 
 
-data class GridItemData(
+data class CardItemData(
     val id: Int,
     val height: Int,
     var isDrag: Boolean = false,
@@ -827,7 +827,7 @@ data class GridItemData(
     var pageIndex: Int = -1,
     var columnsIndex: Int = -1,
 ) {
-    fun deepCopy() = GridItemData(
+    fun deepCopy() = CardItemData(
         id = id,
         height = height,
         isDrag = isDrag,
@@ -846,35 +846,35 @@ data class GridItemData(
     )
 }
 
-class GridItemDataProvider : PreviewParameterProvider<MutableList<GridItemData>> {
-    override val values: Sequence<MutableList<GridItemData>>
+class GridItemDataProvider : PreviewParameterProvider<MutableList<CardItemData>> {
+    override val values: Sequence<MutableList<CardItemData>>
         get() = sequenceOf(
             getItemData()
         )
 }
 
-fun getItemData(): MutableList<GridItemData> {
+fun getItemData(): MutableList<CardItemData> {
     return mutableListOf(
-        GridItemData(1, 1),
-        GridItemData(2, 1),
-        GridItemData(3, 3),
-        GridItemData(4, 1),
-        GridItemData(5, 2),
-        GridItemData(6, 1),
-        GridItemData(7, 3),
-        GridItemData(8, 2),
-        GridItemData(9, 2),
-        GridItemData(10, 3),
-        GridItemData(11, 1),
-        GridItemData(12, 1),
-        GridItemData(13, 2),
-        GridItemData(14, 3),
-        GridItemData(15, 2),
-        GridItemData(16, 2),
-        GridItemData(17, 1),
-        GridItemData(18, 3),
-        GridItemData(19, 2),
-        GridItemData(20, 2),
-        GridItemData(21, 3),
+        CardItemData(1, 1),
+        CardItemData(2, 1),
+        CardItemData(3, 3),
+        CardItemData(4, 1),
+        CardItemData(5, 2),
+        CardItemData(6, 1),
+        CardItemData(7, 3),
+        CardItemData(8, 2),
+        CardItemData(9, 2),
+        CardItemData(10, 3),
+        CardItemData(11, 1),
+        CardItemData(12, 1),
+        CardItemData(13, 2),
+        CardItemData(14, 3),
+        CardItemData(15, 2),
+        CardItemData(16, 2),
+        CardItemData(17, 1),
+        CardItemData(18, 3),
+        CardItemData(19, 2),
+        CardItemData(20, 2),
+        CardItemData(21, 3),
     )
 }

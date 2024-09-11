@@ -21,17 +21,16 @@ import com.lin.comlauncher.entity.ApplicationInfo
 import com.lin.comlauncher.util.DisplayUtils
 import com.lin.comlauncher.util.LauncherConfig
 import com.lin.comlauncher.util.LauncherUtils
-import com.lin.comlauncher.view.GridItemData
+import com.lin.comlauncher.view.CardItemData
 import com.lin.comlauncher.view.LogDebug
 import com.lin.comlauncher.view.initItems
-import com.lin.comlauncher.view.reSortItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
 class HomeViewModel : ViewModel() {
     var infoBaseBean = AppInfoBaseBean()
-    var carList = mutableListOf<MutableList<GridItemData>>()
+    var carList = mutableListOf<MutableList<CardItemData>>()
 
     private var currentVersion = 0
 
@@ -197,7 +196,7 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun loadCardList(screenHeightDp: Int, items: MutableList<GridItemData>) {
+    fun loadCardList(screenHeightDp: Int, items: MutableList<CardItemData>) {
         val betweenPadding = 10.dp.value.toInt()
         val topBottomPadding = 20.dp.value.toInt() * 2
         if(LogDebug)Log.d("loadCardList", "betweenPadding:$betweenPadding, pxToDp:${DisplayUtils.pxToDp(10)}")

@@ -3,7 +3,7 @@ package com.lin.comlauncher.util
 import android.util.Log
 import com.lin.comlauncher.BuildConfig
 import com.lin.comlauncher.entity.ApplicationInfo
-import com.lin.comlauncher.view.GridItemData
+import com.lin.comlauncher.view.CardItemData
 import com.lin.comlauncher.view.LogDebug
 import com.lin.comlauncher.view.reSortItems
 import com.lin.comlauncher.view.reSortItemsV2
@@ -224,17 +224,17 @@ object SortUtils {
      * 重置应用列表和工具列表中的应用位置
      */
     fun resetChoosePosGrid(
-        list: MutableList<MutableList<GridItemData>>,
-        item: GridItemData,
+        list: MutableList<MutableList<CardItemData>>,
+        item: CardItemData,
         itemReplaceId: Int?
-    ): MutableList<MutableList<GridItemData>> {
+    ): MutableList<MutableList<CardItemData>> {
         if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
             LogDebug_Tag, "resetChoosePosGrid----" +
                     "\n"
         )
-        var findReplace: GridItemData? = null
-        val itemsInput: MutableList<GridItemData> = mutableListOf()
-        var findColumnList = mutableListOf<GridItemData>()
+        var findReplace: CardItemData? = null
+        val itemsInput: MutableList<CardItemData> = mutableListOf()
+        var findColumnList = mutableListOf<CardItemData>()
         list.forEach { listFirst ->
             listFirst.forEach {
                 if (LogDebug && LogDebug_resetChoosePosGrid) Log.d(
@@ -344,17 +344,17 @@ object SortUtils {
      * 重置应用列表和工具列表中的应用位置
      */
     fun resetChoosePosRow(
-        list: MutableList<MutableList<GridItemData>>,
-        item: GridItemData,
+        list: MutableList<MutableList<CardItemData>>,
+        item: CardItemData,
         itemReplaceId: Int?
-    ): MutableList<MutableList<GridItemData>> {
+    ): MutableList<MutableList<CardItemData>> {
         if (LogDebug && LogDebug_resetChoosePosRow) Log.d(
             LogDebug_Tag, "resetChoosePosRow----item:${item.id}, " +
                     "itemReplaceId:${itemReplaceId}, "
         )
-        var findReplace: GridItemData? = null
-        val itemsInput: MutableList<GridItemData> = mutableListOf()
-        var ignoreReSortList = mutableListOf<GridItemData>()
+        var findReplace: CardItemData? = null
+        val itemsInput: MutableList<CardItemData> = mutableListOf()
+        var ignoreReSortList = mutableListOf<CardItemData>()
         var findColumnIndex = 0
         var ignoreReSortColumnIndex = -1
         list.forEach { listFirst ->
@@ -508,7 +508,7 @@ object SortUtils {
     fun findCurrentCellByPosGrid(
         posX: Int,
         posY: Int,
-        list: List<List<GridItemData>>,
+        list: List<List<CardItemData>>,
         ignoreId: Int = -1
     ): Int {
         if (LogDebug && LogDebug_SortUtils) Log.d(
@@ -528,7 +528,7 @@ object SortUtils {
 //            return -pos - 100
 //        }
 
-        val dragCard: GridItemData? = findCurrentActorPixDp(list, posX, posY, ignoreId = ignoreId)
+        val dragCard: CardItemData? = findCurrentActorPixDp(list, posX, posY, ignoreId = ignoreId)
 
         if (LogDebug && LogDebug_SortUtils) Log.d(
             LogDebug_Tag,
@@ -541,7 +541,7 @@ object SortUtils {
     fun findCurrentCellByPosRow(
         posX: Int,
         posY: Int,
-        list: List<List<GridItemData>>,
+        list: List<List<CardItemData>>,
         ignoreId: Int = -1
     ): Int {
         if (LogDebug && LogDebug_SortUtils) Log.d(
@@ -561,7 +561,7 @@ object SortUtils {
 //            return -pos - 100
 //        }
 
-        val dragCard: GridItemData? = findCurrentActorPixDp(list, posX, posY, ignoreId = ignoreId)
+        val dragCard: CardItemData? = findCurrentActorPixDp(list, posX, posY, ignoreId = ignoreId)
 
         if (LogDebug && LogDebug_SortUtils) Log.d(
             LogDebug_Tag,
@@ -589,7 +589,7 @@ object SortUtils {
         return null
     }
 
-    fun findCurrentActorPix(list: List<List<GridItemData>>, pixX: Int, pixY: Int): GridItemData? {
+    fun findCurrentActorPix(list: List<List<CardItemData>>, pixX: Int, pixY: Int): CardItemData? {
         val posXDp = DisplayUtils.pxToDp(pixX)
         val posYDp = DisplayUtils.pxToDp(pixY)
 
@@ -600,7 +600,7 @@ object SortUtils {
          *             |          |
          *             ------------ (posX + width, posY + height)
          */
-        var g: GridItemData? = null
+        var g: CardItemData? = null
         run {
             list.forEach { l ->
                 l.forEach {
@@ -624,11 +624,11 @@ object SortUtils {
     private val LogDebug_findCurrentActorPixDp = false
 
     fun findCurrentActorPixDp(
-        list: List<List<GridItemData>>,
+        list: List<List<CardItemData>>,
         pixX: Int,
         pixY: Int,
         ignoreId: Int = -1
-    ): GridItemData? {
+    ): CardItemData? {
         /**
          * (posX，posY) ----------
          *             |          |
@@ -636,7 +636,7 @@ object SortUtils {
          *             |          |
          *             ------------ (posX + width, posY + height)
          */
-        var g: GridItemData? = null
+        var g: CardItemData? = null
         run {
             list.forEach { l ->
                 l.forEach continuing@{
@@ -660,7 +660,7 @@ object SortUtils {
         return g
     }
 
-    fun getItemHeight(item: GridItemData, cellSize: Int, betweenPadding: Int): Int {
+    fun getItemHeight(item: CardItemData, cellSize: Int, betweenPadding: Int): Int {
         val padding = if (item.height > 1) betweenPadding * (item.height - 1) else 0
         return cellSize * item.height + padding
     }

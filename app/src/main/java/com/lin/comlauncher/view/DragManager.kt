@@ -6,7 +6,6 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.MutableState
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -433,10 +432,10 @@ const val LogDebug_PointerInputScope_Grid = false
 
 @OptIn(ExperimentalPagerApi::class)
 suspend fun PointerInputScope.detectLongPress(
-    cardList: MutableList<MutableList<GridItemData>>,
+    cardList: MutableList<MutableList<CardItemData>>,
     currentSel: MutableState<Int>,
     coroutineScope: CoroutineScope, coroutineAnimScope: CoroutineScope,
-    dragInfoState: MutableState<GridItemData?>, animFinish: MutableState<Boolean>,
+    dragInfoState: MutableState<CardItemData?>, animFinish: MutableState<Boolean>,
     dragUpState: MutableState<Boolean>,
     offsetX: MutableState<Dp>, offsetY: MutableState<Dp>,
     state: PagerState,
@@ -452,7 +451,7 @@ suspend fun PointerInputScope.detectLongPress(
                 initCurrentSel * 3,
                 (initCurrentSel + 1) * 3
             )
-            val dragCard: GridItemData =
+            val dragCard: CardItemData =
                 SortUtils.findCurrentActorPix(list, off.x.toInt(), off.y.toInt())
                     ?: return@detectDragGesturesAfterLongPress
             dragCard.also { card -> // 如果找到了被拖动的应用，那么就执行大括号中的代码。
@@ -463,9 +462,9 @@ suspend fun PointerInputScope.detectLongPress(
             dragInfoState.value = dragCard
             dragUpState.value = true
             val it = dragCard
-            val listCopy: MutableList<MutableList<GridItemData>> = mutableListOf()
+            val listCopy: MutableList<MutableList<CardItemData>> = mutableListOf()
             cardList.forEach {
-                val list = mutableListOf<GridItemData>()
+                val list = mutableListOf<CardItemData>()
                 it.forEach { iDetail ->
                     list.add(iDetail.deepCopy())
                 }
@@ -682,9 +681,9 @@ suspend fun PointerInputScope.detectLongPress(
 const val LogDebug_PointerInputScope_Row = false
 
 suspend fun PointerInputScope.detectLongPressRow(
-    cardList: MutableList<MutableList<GridItemData>>,
+    cardList: MutableList<MutableList<CardItemData>>,
     coroutineScope: CoroutineScope, coroutineAnimScope: CoroutineScope,
-    dragInfoState: MutableState<GridItemData?>, animFinish: MutableState<Boolean>,
+    dragInfoState: MutableState<CardItemData?>, animFinish: MutableState<Boolean>,
     dragUpState: MutableState<Boolean>,
     offsetX: MutableState<Dp>, offsetY: MutableState<Dp>,
     scrollState: ScrollState
@@ -699,7 +698,7 @@ suspend fun PointerInputScope.detectLongPressRow(
                 "DragManager",
                 "PointerInputScope----onDragStart"
             )
-            val dragCard: GridItemData =
+            val dragCard: CardItemData =
                 SortUtils.findCurrentActorPix(cardList, off.x.toInt(), off.y.toInt())
                     ?: return@detectDragGesturesAfterLongPress
             dragCard.also { card -> // 如果找到了被拖动的应用，那么就执行大括号中的代码。
